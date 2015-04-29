@@ -93,7 +93,7 @@ sub scan_file {
     $full_file_name =~ s{.*/CCTools/Perl/CPAN/}{{CPAN}/}io;
     while (my $line = <$fh>) {
         $line =~ s/\s+$//o;
-        if ($line =~ /package\s+([\w:]+);/) {
+        if ($line =~ /^\s*package\s+([\w:]+);/) {
             $full_class = $1;
             # say "class $full_class";
             
@@ -119,7 +119,7 @@ sub scan_file {
                 $class_meta_info
             );
         }
-        elsif ($line =~ /sub\s+([\w]+)(.*)/){
+        elsif ($line =~ /^\s*sub\s+(\w+)(.*)/){
             my $sub_name = $1;
             my $sub_rest_of_line = $2;
             
