@@ -13,6 +13,7 @@ use strict;
 use vars qw($VERSION);
 $VERSION ='0.101';
 
+$| = 1;
 use v5.10;
 
 use Data::Dumper;
