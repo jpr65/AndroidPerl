@@ -1,14 +1,28 @@
-# meta info system
+#==============================================================================
+#
+# meta_info.pl
+#
+#      Read dump of PQL::Cache created by meta_scan.pl and
+#      start query info system.
+#
+# Ralf Peine, Mon Apr 27 21:45:17 2015
+#
+#==============================================================================
 
-use warnings;
 use strict;
+use vars qw($VERSION);
+$VERSION ='0.101';
 
 use v5.10;
 
 use Data::Dumper;
 
+# local cpan adaptions, currently not released on CPAN, but stored in github
+use lib '../cpan/lib';
+
+# In Android it is difficult to write startup scripts,
+# so I have to add my lib paths here, sorry!
 use lib '/storage/emulated/legacy/CCTools/Perl/CPAN/lib';
-use lib 'e:/user/peine/prj/my_cpan/lib';
 
 use Report::Porf qw(:all);
 use Scalar::Validation qw(:all);

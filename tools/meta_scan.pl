@@ -1,8 +1,18 @@
-# grep subs
+#==============================================================================
 #
+# meta_scan.pl
+#
+#      Scan dirs with perl source code for packages and subs,
+#      fill this meta information into a PQL::Cache and
+#      dump it to file system
+#
+# Ralf Peine, Mon Apr 27 21:45:17 2015
+#
+#==============================================================================
 
 use strict;
-use warnings;
+use vars qw($VERSION);
+$VERSION ='0.101';
 
 use v5.10;
 
@@ -11,8 +21,12 @@ use Data::Dumper;
 use FileHandle;
 use File::Find;
 
+# local cpan adaptions, currently not released on CPAN, but stored in github
+use lib '../cpan/lib';
+
+# In Android it is difficult to write startup scripts,
+# so I have to add my lib paths here, sorry!
 use lib '/storage/emulated/legacy/CCTools/Perl/CPAN/lib';
-use lib 'e:/user/peine/prj/my_cpan/lib';
 
 use Scalar::Validation qw(:all);
 
@@ -23,9 +37,9 @@ require $config_file;
 
 my $config = MyConfig::get();
 
-my $perl_meta_db_file = npar -perl_meta_db_file =>              ExistingFile => $config;
-my $cpan_lib_path     = npar -cpan_lib_path     => -Optional => Filled       => $config;
-my $perl_lib_path     = npar -perl_lib_path     => -Optional => Filled       => $config;
+my $perl_meta_db_file = npar -perl_meta_db_file =>              Filled => $config;
+my $cpan_lib_path     = npar -cpan_lib_path     => -Optional => Filled => $config;
+my $perl_lib_path     = npar -perl_lib_path     => -Optional => Filled => $config;
 
 # my $perl_lib_path = 'c:/Strawberry/perl/lib/';
 # my $cpan_lib_path = 'c:/Strawberry/perl/site/lib/';
@@ -41,16 +55,6 @@ my @paths = map {$_ ? $_:()}  (
     $cpan_lib_path,
     $perl_lib_path,
 );
-
-# while (my $path = shift) {
-#     unless (-d $path) {
-#         warn "skip not existing directory $path";
-#         next;
-#     }
-#     push(@paths, $path);
-# }
-
-my $class_to_search = shift || "GoldenBigMath";
 
 my $meta_infos = new PQL::Cache;
 
@@ -238,3 +242,56 @@ print $fh "}\n1;\n";
 close $fh;
                     
 say '# === All done. ========================';
+
+1;
+
+__END__
+
+=head1 NAME
+
+meta_scan.pl - Pure perl tool to extract meta data from perl source code
+
+Scan dirs with perl source code for packages and subs,
+fill this meta information into a PQL::Cache and
+dump it to file system
+
+=head1 VERSION
+
+This documentation refers to version 0.101 of meta_scan.pl
+
+=head1 SYNOPSIS
+
+  meta_scan.pl <config_file.pl>
+  
+All parameters are defined in the config file, which is a simple Perl file:
+
+  package MyConfig;
+
+  my $root_dir = '/storage/emulated/legacy';
+
+  sub get {
+      return {
+          -perl_meta_db_file => "$root_dir/perl_sw/info/perl_meta_dump.pl.dump",
+          -cpan_lib_path     => "$root_dir/CCTools/Perl/CPAN/lib",
+          # -perl_lib_path     => '.',
+      };
+  }
+
+  1;
+  
+Create your own config file by copy of android.cfg.pl
+
+=head1 DESCRIPTION
+
+Just create config file and start script. Wait some seconds.
+
+Wait a little longer when parsing your local cpan installation.
+
+Thats all!
+
+=head2 What is extracted
+
+Currently only package name and all subs matching
+
+  /^\s*sub\s+(\w+)/
+
