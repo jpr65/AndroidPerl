@@ -28,7 +28,7 @@ use lib '/storage/emulated/legacy/CCTools/Perl/CPAN/lib';
 use Report::Porf qw(:all);
 use Scalar::Validation qw(:all);
 use PQL::Cache qw (:all);
-use MetaPerl;
+use Perl5::MetaInfo::DB;
 
 # --- handle call args and configuration ----
 my $config_file = par configuration => -Default => './android.cfg.pl' => ExistingFile => shift;
@@ -44,7 +44,7 @@ my $max_class_rows    =  30;
 # --- load database ------
 
 our $perl_meta_info_db;
-our $meta_perl_info_service = new MetaPerl();
+our $meta_perl_info_service = new Perl5::MetaInfo::DB();
 
 $meta_perl_info_service->read($perl_meta_db_file);
 

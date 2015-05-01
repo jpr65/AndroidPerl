@@ -8,6 +8,15 @@
 #
 # Ralf Peine, Mon Apr 27 21:45:17 2015
 #
+#------------------------------------------------------------------------------
+#
+# Ideas
+#
+#------------------------------------------------------------------------------
+#
+# Use perl5i::Meta on PC (MSWin / Linux) 
+#     to extract Meta data from running instances
+#
 #==============================================================================
 
 use strict;
@@ -74,6 +83,25 @@ $meta_infos->set_table_definition(
         columns => [qw(class_ID line_nbr)]
     }
 );
+
+# --- TODO: Overwork code from cpan -----------
+sub extract_perl_version {
+        if (
+                $_[0] =~ m/
+                ^\s*
+                (?:use|require) \s*
+                v?
+                ([\d_\.]+)
+                \s* ;
+                /ixms
+        ) {
+                my $perl_version = $1;
+                $perl_version =~ s{_}{}g;
+                return $perl_version;
+        } else {
+                return;
+        }
+}
 
 sub scan_file {
     my $file = par PerlFile => ExistingFile => shift;
