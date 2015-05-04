@@ -1,5 +1,5 @@
 #!/system/bin/sh
 
-# meta info
+# meta scan
 
 perl -I/storage/emulated/legacy/CCTools/Perl/CPAN/lib meta_info.pl $*
