@@ -31,13 +31,12 @@ use FileHandle;
 use File::Find;
 
 # local cpan adaptions, currently not released on CPAN, but stored in github
-use lib '../cpan/lib';
+use lib '../spartanic/lib';
+use Perl5::Spartanic;
 
-# In Android it is difficult to write startup scripts,
-# so I have to add my lib paths here, sorry!
-use lib '/storage/emulated/legacy/CCTools/Perl/CPAN/lib';
-
+use Report::Porf qw(:all);
 use Scalar::Validation qw(:all);
+use PQL::Cache qw (:all);
 
 # --- handle call args and configuration ----
 my $config_file = par configuration => -Default => './android.cfg.pl' => ExistingFile => shift;
@@ -49,16 +48,6 @@ my $config = MyConfig::get();
 my $perl_meta_db_file = npar -perl_meta_db_file =>              Filled => $config;
 my $cpan_lib_path     = npar -cpan_lib_path     => -Optional => Filled => $config;
 my $perl_lib_path     = npar -perl_lib_path     => -Optional => Filled => $config;
-
-# my $perl_lib_path = 'c:/Strawberry/perl/lib/';
-# my $cpan_lib_path = 'c:/Strawberry/perl/site/lib/';
-
-# my $dump_db_file_name = '/storage/emulated/legacy/perl_sw/tools/perl_meta_dump.pl.dump';
-# my $dump_db_file_name = 'e:/user/peine/prj/my_cpan/ide/perl_meta_dump.pl.dump';
-
-use Report::Porf qw(:all);
-use Scalar::Validation qw(:all);
-use PQL::Cache qw (:all);
 
 my @paths = map {$_ ? $_:()}  (
     $cpan_lib_path,

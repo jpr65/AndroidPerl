@@ -4,6 +4,8 @@
 #
 #      Use PQL::Cache to build up PerlMeta data information system.
 #
+#  Part of Perl5::Spartanic::IDE
+#
 # Ralf Peine, Fri May 01 09:00 2015
 #
 #==============================================================================
@@ -11,19 +13,15 @@
 package Perl5::MetaInfo::DB;
 
 use strict;
+use warnings;
+
 use vars qw($VERSION);
 $VERSION ='0.101';
 
 use v5.10;
+use Perl5::Spartanic;
 
 use Data::Dumper;
-
-# local cpan adaptions, currently not released on CPAN, but stored in github
-use lib '../cpan/lib';
-
-# In Android it is difficult to write startup scripts,
-# so I have to add my lib paths here, sorry!
-use lib '/storage/emulated/legacy/CCTools/Perl/CPAN/lib';
 
 use Report::Porf qw(:all);
 use Scalar::Validation qw(:all);

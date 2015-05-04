@@ -14,6 +14,8 @@ use strict;
 use vars qw($VERSION);
 $VERSION ='0.811';
 
+use Perl5::Spartanic;
+
 # standards
 use warnings;
 use Carp;

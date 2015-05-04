@@ -18,16 +18,14 @@ use v5.10;
 
 use Data::Dumper;
 
-# local cpan adaptions, currently not released on CPAN, but stored in github
-use lib '../cpan/lib';
+# spartanic libs, stored in github
+use lib '../spartanic/lib';
 
-# In Android it is difficult to write startup scripts,
-# so I have to add my lib paths here, sorry!
-use lib '/storage/emulated/legacy/CCTools/Perl/CPAN/lib';
-
-use Report::Porf qw(:all);
+use Perl5::Spartanic;
 use Scalar::Validation qw(:all);
 use PQL::Cache qw (:all);
+use Report::Porf qw(:all);
+
 use Perl5::MetaInfo::DB;
 
 # --- handle call args and configuration ----
