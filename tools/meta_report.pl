@@ -126,7 +126,7 @@ sub prepare_html_filenames {
             $module_source = $1;
         } 
         my $html_file = "$html_output_path/$module_source/$fullname.html";
-        $html_file =~ s{::}{/}og;
+        $html_file =~ s{::?}{/}og;
         create_path_for_file($html_file);
         say $html_file;
     
@@ -149,6 +149,24 @@ foreach my $class_info (@$class_info_list) {
         
         push (@method_list, $method_info);
     }
-    
-    auto_report(\@method_list, $html_file);
+
+    my $done = eval {
+	print "report $html_file ... ";
+	auto_report(\@method_list, $html_file);
+	say "Done";
+	1;
+    };
+
+    unless ($done) {
+	my $error_message = $@;
+	say "\n\tError: $error_message";
+	my $html_fh = new FileHandle();
+	$html_fh->open(">$html_file");
+	say $html_fh "<html>";
+	say $html_fh "<body>";
+	say $html_fh "Could not create html method documentation, error was:";
+	say $html_fh $error_message;
+	say $html_fh "</body>";
+	say $html_fh "</html>";
+    }
 }

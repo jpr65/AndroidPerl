@@ -1,5 +1,6 @@
+*~
+html/*
 tools/dmrz.cfg.pl
-*.pl~
 tools/mi.bat
 tools/ms.bat
-tools/mi.bat~
+tools/mr.bat
