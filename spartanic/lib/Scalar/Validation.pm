@@ -246,7 +246,15 @@ $rule_store = {
                        -where   => sub { -f $_ },
                        -message => sub { "$_ is not a valid name of an existing file"},
                        -owner   => 'CPAN',
-                       -description => "File with given file name has to exist"
+                       -description => "File with given name has to exist"
+    },
+
+    ExistingDir   => { -name    => 'ExistingDir',
+                       -as      => 'Filled',
+                       -where   => sub { -d $_ },
+                       -message => sub { "$_ is not a valid name of an existing directory"},
+                       -owner   => 'CPAN',
+                       -description => "Directory with given name has to exist"
     },
 
     Bool =>          { -name    => 'Bool',

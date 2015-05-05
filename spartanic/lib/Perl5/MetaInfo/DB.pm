@@ -89,6 +89,28 @@ sub read {
     say '# '.scalar (@$methods) . " method infos loaded.";
 }
 
+sub select_complete_class_infos {
+    my $trouble_level = p_start;
+ 
+    my $self          = par self        => $is_self => shift;
+    
+    p_end \@_;
+ 
+    return undef if validation_trouble($trouble_level);
+    
+    # --- run sub -----------------------------------------------
+
+    my $class_infos = $self->{DB}->select(
+                    what  => 'all',
+                    from  => 'class',
+                    # where => [ fullname => {like => $class_regex}
+                    # ],
+                );
+                
+    return $self->sort_by( fullname => $class_infos );        
+
+}
+
 # --- select classes -----------------------------------------------
 sub select_classes {
     my $trouble_level = p_start;

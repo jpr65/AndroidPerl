@@ -45,9 +45,9 @@ require $config_file;
 
 my $config = MyConfig::get();
 
-my $perl_meta_db_file = npar -perl_meta_db_file =>              Filled => $config;
-my $cpan_lib_path     = npar -cpan_lib_path     => -Optional => Filled => $config;
-my $perl_lib_path     = npar -perl_lib_path     => -Optional => Filled => $config;
+my $perl_meta_db_file = npar -perl_meta_db_file =>              Filled      => $config;
+my $cpan_lib_path     = npar -cpan_lib_path     => -Optional => ExistingDir => $config;
+my $perl_lib_path     = npar -perl_lib_path     => -Optional => ExistingDir => $config;
 
 my @paths = map {$_ ? $_:()}  (
     $cpan_lib_path,
@@ -110,6 +110,9 @@ sub scan_file {
     $full_file_name =~ s{.*/CCTools/Perl/CPAN/}{{CPAN}/}io;
     while (my $line = <$fh>) {
         $line =~ s/\s+$//o;
+        
+        last if $line =~ /^\s*__END__$/;
+        
         if ($line =~ /^\s*package\s+([\w:]+);/) {
             $full_class = $1;
             # say "class $full_class";
