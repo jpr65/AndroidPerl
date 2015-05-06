@@ -14,7 +14,7 @@ sub get {
         -perl_meta_db_file => "$root_dir/perl_sw/info/perl_meta_dump.pl.dump",
         -cpan_lib_path     => "$root_dir/CCTools/Perl/CPAN/lib",
         -perl_lib_path     => '../lib',
-        -html_out_path     => '../html',
+        -html_out_path     => "$root_dir/perl_sw/info/",
     };
 }
 
