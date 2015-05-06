@@ -58,6 +58,34 @@ my $class_info_list = $meta_perl_info_service->select_complete_class_infos();
 
 # say Dumper $class_info_list->[0];
 
+# --- combine given paths and add ../ if not starting at root dir -------------
+sub combine_html_paths {
+    my $path  = '';
+    my $slash = '';
+    
+    while (scalar @_) {
+	my $path_part = par path_part => Filled => shift;
+	$path .= $slash.$path_part;
+	$slash = "/";
+    }
+
+    my $drive = '';
+
+    # windows path like E:bla
+    if ($path =~ m{(^[A-Za-z]:)(.*)}) {
+	$drive = $1;
+	$path  = $2;
+    }
+    
+    if ($path =~ m{^/} ) {
+    }
+    else {
+	$path = "../$path";
+    }
+
+    return "$drive$path";
+}
+
 sub report_classes {
     my $trouble_level     = p_start;
     
@@ -75,7 +103,7 @@ sub report_classes {
     $report->cc(-h => 'ID',        -w =>  5,  -vn => 'ID',
                                    -a => 'r', -f  => "%5d");
     $report->cc(-h => 'Name',      -w => 30,  -a  =>'c', -esc => 0,
-                -v => sub { '<a href="../' . $_[0]->{_html_file} .'">'
+                -v => sub { '<a href="' . combine_html_paths($_[0]->{_html_file}) .'">'
                                         . $_[0]->{classname}  . '</a>'; 
                           }
                );
@@ -126,9 +154,17 @@ sub prepare_html_filenames {
             $module_source = $1;
         } 
         my $html_file = "$html_output_path/$module_source/$fullname.html";
-        $html_file =~ s{::?}{/}og;
-        create_path_for_file($html_file);
-        say $html_file;
+        $html_file =~ s{::}{/}og;
+
+	my $done = eval {
+	    create_path_for_file($html_file);
+	    say $html_file;
+	    1;
+	};
+
+	unless ($done) {
+	    warn "could not crate path for file $html_file: $!";
+	}
     
         $class_info->{_html_file} = $html_file;
     }
