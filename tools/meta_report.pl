@@ -32,6 +32,7 @@ use Report::Porf qw(:all);
 use Perl5::MetaInfo::DB;
 
 our %namespaces;
+our %special_dirs;
 
 # --- handle call args and configuration ----
 my $config_file = par configuration => -Default => './android.cfg.pl' => ExistingFile => shift;
@@ -42,6 +43,8 @@ my $config = MyConfig::get();
 
 our $perl_meta_db_file = npar -perl_meta_db_file => ExistingFile => $config;
 our $html_output_path  = npar -html_out_path     => ExistingDir  => $config;
+
+our $startup_file      = "$html_output_path/_index.html";
 
 # --- load database ------
 
@@ -82,23 +85,21 @@ sub combine_html_paths {
     my $slash = '';
     
     while (scalar @_) {
-	my $path_part = par path_part => Filled => shift;
-	$path .= $slash.$path_part;
-	$slash = "/";
+	       my $path_part = par path_part => Filled => shift;
+	       $path .= $slash.$path_part;
+	       $slash = "/";
     }
 
     my $drive = '';
 
     # windows path like E:bla
     if ($path =~ m{(^[A-Za-z]:)(.*)}) {
-	$drive = $1;
-	$path  = $2;
+	       $drive = $1;
+	       $path  = $2;
     }
     
-    if ($path =~ m{^/} ) {
-    }
-    else {
-	$path = "../$path";
+    if ($path !~ m{^/} ) {
+        $path = "../$path";
     }
 
     return "$drive$path";
@@ -118,19 +119,33 @@ sub prepare_html_filenames {
     foreach my $class_info (@$class_info_list) {
         my $fullname = $class_info->{fullname};
         my $module_source = 'modules';
+        
         if ($class_info->{filename} =~ /^{(\w+)}/) {
             $module_source = $1;
         } 
+        
+        $special_dirs{$module_source}++;
+        
         my $html_file = "$html_output_path/$module_source/$fullname.html";
         $html_file =~ s{::}{/}og;
         create_path_for_file($html_file);
-        say $html_file;
+        # say $html_file;
     
         $class_info->{_html_file} = $html_file;
     }
 }
 
 sub create_class_overview_report {
+    my $trouble_level     = p_start;
+    
+    my $current_namespace = par current_namespace => Scalar => shift;
+    
+    p_end \@_;
+ 
+    return undef if validation_trouble($trouble_level);
+    
+    # --- run sub -----------------------------------------------
+    
     
     my $framework = Report::Porf::Framework::get();
     my $report    = $framework->create_report('html');
@@ -141,8 +156,11 @@ sub create_class_overview_report {
                 -v => sub { '<a href="' . combine_html_paths($_[0]->{_html_file}) .'">'
                                         . $_[0]->{classname}  . '</a>'; 
                           }
-               );
-    $report->cc(-h => 'Namespace', -w => 30,  -vn => 'namespace');
+    );
+    $report->cc(-h => 'Namespace', -w => 30, -esc => 0,
+                -v  => sub { build_namespace_links_down($current_namespace, $_[0]->{'namespace'}); 
+                           }
+    );
     $report->cc(-h => '#Line',     -w =>  5,  -v  => '$_[0]->{line_nbr} || 0',
                                    -a => 'r', -f  => "%5d");
     $report->cc(-h => 'File',      -w => 45,  -vn => 'filename');
@@ -188,6 +206,90 @@ sub report_class_overview_list {
 
     say $report_file_handle '</body>';
     say $report_file_handle '</html>';
+}
+
+sub build_home_link {
+    my $trouble_level     = p_start;
+    
+    my $namespace = par namespace => Scalar => shift;
+    
+    p_end \@_;
+ 
+    return undef if validation_trouble($trouble_level);
+    
+    # --- run sub -----------------------------------------------
+    
+    my @namespace_splitted = split (/::?/, $namespace);
+    
+    my $dir_level = scalar (@namespace_splitted);
+    my $top_path  = "../" x $dir_level;
+    
+    # say "$dir_level $top_path $namespace";
+    
+    return "<a href='${top_path}_index.html'>Home</a>";
+}
+
+sub build_namespace_links_up {
+    my $trouble_level     = p_start;
+    
+    my $namespace = par namespace => Scalar => shift;
+    
+    p_end \@_;
+ 
+    return undef if validation_trouble($trouble_level);
+    
+    # --- run sub -----------------------------------------------
+    
+    return "" unless $namespace;
+    
+    my $namespace_html = "";
+    
+    my $dir_up = '.';
+    foreach my $part (reverse (split (/::?/, $namespace))) {
+        $namespace_html = "<a href='$dir_up/_index.html'>$part</a>::$namespace_html";
+        $dir_up .= '/..';
+    }
+    
+    $namespace_html =~ s/::$//;
+    
+    return $namespace_html;
+}
+
+sub build_namespace_links_down {
+    my $trouble_level     = p_start;
+    
+    my $start_dir = par start_dir => Scalar => shift;
+    my $namespace = par namespace => Scalar => shift;
+    
+    p_end \@_;
+ 
+    return undef if validation_trouble($trouble_level);
+    
+    # --- run sub -----------------------------------------------
+    
+    return "" unless $namespace;
+    
+    my @dirs_up = split (/::?/, $start_dir);
+    # shift @dirs_up;
+    my $dir_up = join('/', map { ".." } @dirs_up);
+    $dir_up .= '/' if $dir_up;
+    
+    # say "dir_up $dir_up";
+    
+    my $namespace_html = "";
+    
+    my $dir_down = "";
+    foreach my $part (split (/::?/, $namespace)) {
+        $dir_down .= $part;
+        $namespace_html .= "<a href='$dir_up$dir_down/_index.html'>$part</a>::";
+        $dir_down .= '/';
+    }
+    
+    $namespace_html =~ s/::$//;
+    
+    # say "namespace_html = $namespace_html";
+    
+    return $namespace_html;
 }
 
 sub report_class_methods {
@@ -237,9 +339,11 @@ sub report_class_methods {
         say $report_file_handle "<title>Perl Module/Class: $fullname</title>";
         say $report_file_handle '<body>';
     
-        my $namespace_html = "<a href='./_index.html'>$namespace</a>::"
-            if $namespace;
-        say $report_file_handle "<h1>$namespace_html$classname</h1>";
+        my $namespace_html = build_namespace_links_up($namespace);
+        
+        say $report_file_handle "<h1>$namespace_html::$classname</h1>";
+        
+        say $report_file_handle "<h3>".build_home_link($namespace)."</h3>";
         
         say $report_file_handle "<h4>$module_filename</h4>";
         say $report_file_handle '<h4>'.localtime().'</h4>';
@@ -304,36 +408,45 @@ sub report_namespace {
     
     # --- run sub -----------------------------------------------
     
-    my $report         = create_class_overview_report();
+    my $report         = create_class_overview_report($namespace);
     my $namespace_path = $namespace || '.';
     $namespace_path    =~ s{::}{/}og;
-    my $report_file    = create_path_for_file(
-        "$html_output_path/modules/$namespace_path/_index.html"
-    );
+    foreach my $lib_dir (keys(%special_dirs)) {
+        my $report_file    = create_path_for_file(
+            "$html_output_path/$lib_dir/$namespace_path/_index.html"
+        );
         
-    my $report_file_handle = new FileHandle;
-    $report_file_handle->open(">$report_file");
+        # say $report_file;
+        
+        my $report_file_handle = new FileHandle;
+        $report_file_handle->open(">$report_file");
 
-    say $report_file_handle '<html>';
-    say $report_file_handle '<title>Perl Namespace $namespace</title>';
-    say $report_file_handle '<body>';
+        say $report_file_handle '<html>';
+        say $report_file_handle '<title>Perl Namespace $namespace</title>';
+        say $report_file_handle '<body>';
     
-    say $report_file_handle "<h1>$namespace - Modules</h1>";
+        my $namespace_html = build_namespace_links_up($namespace);
+        
+        say $report_file_handle "<h1>$namespace_html</h1>";
+        
+        say $report_file_handle "<h3>".build_home_link($namespace)."</h3>";
+        
+        say $report_file_handle "<h2>Modules</h1>";
     
-    say $report_file_handle '<h4>Generated: '.localtime().'</h4>';
-    say $report_file_handle '<h4>Modules listed: '.scalar(@$class_info_list).'</h4>';
+        say $report_file_handle '<h4>Generated: '.localtime().'</h4>';
+        say $report_file_handle '<h4>Modules listed: '.scalar(@$class_info_list).'</h4>';
     
-    print $report_file_handle $report->get_table_start();
+        print $report_file_handle $report->get_table_start();
     
-    print $report_file_handle $report->get_header_output();
+        print $report_file_handle $report->get_header_output();
        
-    $report->write_table($class_info_list, $report_file_handle);
+        $report->write_table($class_info_list, $report_file_handle);
     
-    say $report_file_handle $report->get_table_end();
+        say $report_file_handle $report->get_table_end();
 
-    say $report_file_handle '</body>';
-    say $report_file_handle '</html>';
-
+        say $report_file_handle '</body>';
+        say $report_file_handle '</html>';
+    }
 }
 
 prepare_html_filenames($class_info_list);
@@ -344,10 +457,22 @@ foreach my $class_info (@$class_info_list) {
     store_namespace($class_info);
 }
 
-foreach my $namespace (sort(keys(%namespaces))) {
+# --- complete namespaces ---
+my @namespace_keys = keys(%namespaces);
+foreach my $namespace (@namespace_keys) {
+    while ($namespace) {
+        $namespaces{$namespace} = [] unless $namespaces{$namespace};
+        $namespace =~ s/^\w+$//;
+        $namespace =~ s/::\w+$//; 
+    }
+}
+
+@namespace_keys = sort(keys(%namespaces));
+
+foreach my $namespace (@namespace_keys) {
     next unless $namespace;
     
-    say "generate overview of $namespace";
+    say "generate overview of namespace $namespace";
     report_namespace($namespace, $namespaces{$namespace});
 }
 
