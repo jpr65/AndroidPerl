@@ -37,6 +37,7 @@ use Perl5::Spartanic;
 use Report::Porf qw(:all);
 use Scalar::Validation qw(:all);
 use PQL::Cache qw (:all);
+use Perl5::MetaInfo::DB;
 
 # --- handle call args and configuration ----
 my $config_file = par configuration => -Default => './android.cfg.pl' => ExistingFile => shift;
@@ -54,24 +55,12 @@ my @paths = map {$_ ? $_:()}  (
     $perl_lib_path,
 );
 
-my $meta_infos = new PQL::Cache;
+my $meta_perl_info_service = new Perl5::MetaInfo::DB();
+my $meta_infos             = $meta_perl_info_service->new_database();
 
-$meta_infos->set_table_definition(
-    class =>{
-        keys => [qw(ID fullname)],
-        columns => [qw(namespace classname filename line_nbr)]
-    }
-);
-
-my $next_class_id  = 1;
-my $next_method_id = 1;
-
-$meta_infos->set_table_definition(
-    method =>{
-        keys => [qw(ID name)],
-        columns => [qw(class_ID line_nbr)]
-    }
-);
+my $next_class_id    = 1;
+my $next_method_id   = 1;
+my $next_namspace_id = 1;
 
 # --- TODO: Overwork code from cpan -----------
 sub extract_perl_version {
@@ -91,6 +80,32 @@ sub extract_perl_version {
                 return;
         }
 }
+
+sub insert_namespace {
+    my $namespace = par namespace => Filled => shift;
+    
+    if ($namespace) {
+        my $namespace_known = $meta_infos->select(
+            what  => all       =>  
+            from  => namespace =>
+            where => [ name => $namespace ]
+        );
+                
+        return 1 if (scalar @$namespace_known);
+            
+        $meta_infos->insert(
+            namespace => {
+                ID    => $next_namspace_id++, 
+                name  => $namespace,
+            }
+        );
+        
+        # say "added namespace: $next_namspace_id => $namespace";
+    }
+    
+    return 0;
+}
+            
 
 sub scan_file {
     my $file = par PerlFile => ExistingFile => shift;
@@ -138,6 +153,11 @@ sub scan_file {
             $meta_infos->insert(class => 
                 $class_meta_info
             );
+            
+            while ($namespace  &&  ! insert_namespace($namespace)) {
+                last unless $namespace =~ /::/;
+                $namespace =~ s/::\w+$//;
+            }
         }
         elsif ($line =~ /^\s*sub\s+(\w+)(.*)/){
             my $sub_name = $1;
@@ -162,49 +182,6 @@ sub scan_file {
     }
     
     # say "# --- done ---";
-}
-
-sub join_class_to_method {
-    my $method_list     = par method_list => ArrayRef => shift;
-    
-    my %class_ids_hash = map { $_->{class_ID} ? ($_->{class_ID} => 1) : (1 => 1); } @$method_list;
-        
-    my @class_ids = sort keys %class_ids_hash;
-    # say "# class Ids @class_ids";
-        
-    my $class_infos_selection = $meta_infos->select(
-        what  => [qw(ID fullname)],
-        from  => 'class',
-        where => [ ID => {in => [@class_ids] }
-        ],
-    );
-    
-    # auto_report($class_infos_selection);
-    
-    my %class_infos = map { $_->{ID} => $_; } @$class_infos_selection;
-        
-    foreach my $method_info (@$method_list) {
-        my $class_id = delete $method_info->{class_ID} || "1";
-        my $class_info_ref = $class_infos{$class_id};
-        
-        $method_info->{class} 
-            = $class_info_ref
-            ? $class_info_ref->{fullname}
-            : "?$class_id";
-    }
-    
-    return $method_list;
-}
-
-sub join_by_class_id {
-    my $methods_of_class   = par method_list => ArrayRef => shift;
-    my $class_to_get_infos = par class_info  => HashRef  => shift;
-    
-    my $class_name = $class_to_get_infos->{fullname};
-    foreach my $method_info (@$methods_of_class) {
-        my $class_id = delete $method_info->{class_ID};
-        $method_info->{class} = $class_name;
-    }
 }
 
 say '';

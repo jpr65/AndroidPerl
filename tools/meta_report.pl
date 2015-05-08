@@ -31,7 +31,6 @@ use Report::Porf qw(:all);
 
 use Perl5::MetaInfo::DB;
 
-our %namespaces;
 our %special_dirs;
 
 # --- handle call args and configuration ----
@@ -59,12 +58,13 @@ $meta_perl_info_service->read($perl_meta_db_file);
 
 say "# select classes ...";
 
-my $class_info_list = $meta_perl_info_service->select_complete_class_infos();
+my $class_info_list     = $meta_perl_info_service->select_complete_class_infos();
+my $namespace_info_list = $meta_perl_info_service->select_complete_namespace_infos();
 
 # say Dumper $class_info_list->[0];
 sub create_path_for_file {
-    my $trouble_level     = p_start;
-    
+    my $trouble_level  = p_start;
+
     my $file_with_path = par file_with_path => Filled => shift;
     
     p_end \@_;
@@ -85,7 +85,10 @@ sub combine_html_paths {
     my $slash = '';
     
     while (scalar @_) {
-	       my $path_part = par path_part => Filled => shift;
+	       my $path_part = par path_part
+	                       => -Default => '?'
+	                       => Scalar   => shift
+	       ;
 	       $path .= $slash.$path_part;
 	       $slash = "/";
     }
@@ -101,14 +104,19 @@ sub combine_html_paths {
     if ($path !~ m{^/} ) {
         $path = "../$path";
     }
+    
+    my $result_path = "$drive$path"; 
 
-    return "$drive$path";
+    # say $result_path;
+
+    return $result_path;
 }
 
 sub prepare_html_filenames {
     my $trouble_level     = p_start;
     
-    my $file_with_path = par file_with_path => ArrayRef => shift;
+    my $name_property  = par name_property  => Filled   => shift;
+    my $meta_info_list = par meta_info_list => ArrayRef => shift;
     
     p_end \@_;
  
@@ -116,11 +124,13 @@ sub prepare_html_filenames {
     
     # --- run sub -----------------------------------------------
 
-    foreach my $class_info (@$class_info_list) {
-        my $fullname = $class_info->{fullname};
+    foreach my $meta_info (@$meta_info_list) {
+        my $fullname = $meta_info->{$name_property};
         my $module_source = 'modules';
         
-        if ($class_info->{filename} =~ /^{(\w+)}/) {
+        # say $fullname;
+        
+        if ($meta_info->{filename} =~ /^{(\w+)}/) {
             $module_source = $1;
         } 
         
@@ -131,8 +141,25 @@ sub prepare_html_filenames {
         create_path_for_file($html_file);
         # say $html_file;
     
-        $class_info->{_html_file} = $html_file;
+        $meta_info->{_html_file} = $html_file;
     }
+}
+
+sub prepare_namespace_html_filenames {
+    my $trouble_level     = p_start;
+    
+    my $namespace_info_list = par namespace_info_list => ArrayRef => shift;
+    
+    p_end \@_;
+ 
+    return undef if validation_trouble($trouble_level);
+    
+    # --- run sub -----------------------------------------------
+    
+    foreach my $namespace_info (@$namespace_info_list) {
+        $namespace_info->{_index_html_filename} = $namespace_info->{name}."::_index";
+    }
+    prepare_html_filenames(_index_html_filename => $namespace_info_list);
 }
 
 sub create_class_overview_report {
@@ -251,6 +278,8 @@ sub build_namespace_links_up {
     }
     
     $namespace_html =~ s/::$//;
+    
+    # say $namespace_html;
     
     return $namespace_html;
 }
@@ -378,35 +407,23 @@ sub report_class_methods {
     }
 }
 
-sub store_namespace {
-    my $trouble_level     = p_start;
-    
-    my $class_info = par class_info => HashRef => shift;
-    
-    p_end \@_;
- 
-    return undef if validation_trouble($trouble_level);
-    
-    # --- run sub -----------------------------------------------
-    
-    my $namespace       = $class_info->{namespace};
-    
-    $namespaces{$namespace} = [] unless defined $namespaces{$namespace};
-    
-    push (@{$namespaces{$namespace}}, $class_info);
-}
-
 sub report_namespace {
     my $trouble_level   = p_start;
     
     my $namespace       = par namespace       => Filled   => shift;
-    my $class_info_list = par class_info_list => ArrayRef => shift;
     
     p_end \@_;
- 
+
     return undef if validation_trouble($trouble_level);
     
     # --- run sub -----------------------------------------------
+    print "generate overview of namespace $namespace ... ";
+
+    my $class_info_list = $meta_perl_info_service
+        ->select_class_objects('^'.$namespace.'::\w+$');
+ 
+    print "with ".scalar(@$class_info_list)." classes ... ";
+    # say Dumper ($class_info_list);
     
     my $report         = create_class_overview_report($namespace);
     my $namespace_path = $namespace || '.';
@@ -422,7 +439,7 @@ sub report_namespace {
         $report_file_handle->open(">$report_file");
 
         say $report_file_handle '<html>';
-        say $report_file_handle '<title>Perl Namespace $namespace</title>';
+        say $report_file_handle "<title>Perl Namespace $namespace</title>";
         say $report_file_handle '<body>';
     
         my $namespace_html = build_namespace_links_up($namespace);
@@ -431,7 +448,7 @@ sub report_namespace {
         
         say $report_file_handle "<h3>".build_home_link($namespace)."</h3>";
         
-        say $report_file_handle "<h2>Modules</h1>";
+        say $report_file_handle "<h2>Modules Of Namespace</h1>";
     
         say $report_file_handle '<h4>Generated: '.localtime().'</h4>';
         say $report_file_handle '<h4>Modules listed: '.scalar(@$class_info_list).'</h4>';
@@ -447,33 +464,34 @@ sub report_namespace {
         say $report_file_handle '</body>';
         say $report_file_handle '</html>';
     }
+    say "Done";
+	   1;
 }
 
-prepare_html_filenames($class_info_list);
+prepare_html_filenames(fullname => $class_info_list);
+
+say "namespace filenames";
+# print Dumper($namespace_info_list);
+
+prepare_namespace_html_filenames($namespace_info_list);
+
+# print Dumper($namespace_info_list);
+
+# die "STOP";
+
 report_class_overview_list($class_info_list);
 
 foreach my $class_info (@$class_info_list) {
     report_class_methods($class_info);
-    store_namespace($class_info);
 }
 
-# --- complete namespaces ---
-my @namespace_keys = keys(%namespaces);
-foreach my $namespace (@namespace_keys) {
-    while ($namespace) {
-        $namespaces{$namespace} = [] unless $namespaces{$namespace};
-        $namespace =~ s/^\w+$//;
-        $namespace =~ s/::\w+$//; 
-    }
-}
-
-@namespace_keys = sort(keys(%namespaces));
+my @namespace_keys = map { 
+    $_->{name};
+} @$namespace_info_list;
 
 foreach my $namespace (@namespace_keys) {
-    next unless $namespace;
-    
-    say "generate overview of namespace $namespace";
-    report_namespace($namespace, $namespaces{$namespace});
+    next unless $namespace;    
+    report_namespace($namespace);
 }
 
 say '*** All Done ***';

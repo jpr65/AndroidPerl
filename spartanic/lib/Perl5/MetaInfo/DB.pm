@@ -55,6 +55,56 @@ sub _init
     $self->{DB}              = undef;
 }
 
+sub get_database {
+    my $trouble_level     = p_start;
+ 
+    my $self              = par self      => $is_self     => shift;
+    
+    p_end \@_;
+ 
+    return undef if validation_trouble($trouble_level);
+    
+    # --- run sub -----------------------------------------------
+ 
+    return $self->{DB};
+}
+
+# --- create new, empty database ---------------------------------------
+sub new_database {
+    my $trouble_level     = p_start;
+ 
+    my $self              = par self      => $is_self     => shift;
+    
+    p_end \@_;
+ 
+    return undef if validation_trouble($trouble_level);
+    
+    # --- run sub -----------------------------------------------
+    my $meta_infos = new PQL::Cache;
+
+    $meta_infos->set_table_definition(
+        class => {
+            keys => [qw(ID fullname)],
+            columns => [qw(namespace classname filename line_nbr)]
+        }
+    );
+
+    $meta_infos->set_table_definition(
+        method => {
+            keys => [qw(ID name)],
+            columns => [qw(class_ID line_nbr)]
+        }
+    );
+    
+    $meta_infos->set_table_definition(
+        namespace => {
+            keys => [qw(ID name)],
+        }
+    );
+    
+    return $self->{DB} = $meta_infos;
+}
+
 # --- load database ---------------------------------------
 sub read {
     my $trouble_level     = p_start;
@@ -74,19 +124,38 @@ sub read {
         $dump_db_file_name
     );
     
-    my $classes = $self->{DB}->select(
+    my $classes = $self->get_database()->select(
 	        what => [qw(ID fullname line_nbr)],
 	        from => 'class',
 	   );
     
     say '# '.scalar (@$classes) . " class infos loaded.";
     
-    my $methods = $self->{DB}->select(
+    my $methods = $self->get_database()->select(
         what  => 'all',
 	       from  => 'method',
 	   );
 
     say '# '.scalar (@$methods) . " method infos loaded.";
+}
+
+sub select_complete_namespace_infos {
+    my $trouble_level = p_start;
+ 
+    my $self          = par self        => $is_self => shift;
+    
+    p_end \@_;
+ 
+    return undef if validation_trouble($trouble_level);
+    
+    # --- run sub -----------------------------------------------
+
+    my $namespace_infos = $self->get_database()->select(
+                    what  => 'all',
+                    from  => 'namespace',
+                );
+                
+    return $self->sort_by( name => $namespace_infos );        
 }
 
 sub select_complete_class_infos {
@@ -100,15 +169,35 @@ sub select_complete_class_infos {
     
     # --- run sub -----------------------------------------------
 
-    my $class_infos = $self->{DB}->select(
+    my $class_infos = $self->get_database()->select(
                     what  => 'all',
                     from  => 'class',
-                    # where => [ fullname => {like => $class_regex}
-                    # ],
                 );
                 
     return $self->sort_by( fullname => $class_infos );        
 
+}
+# --- select namespaces --------------------------------------------
+sub select_namespaces {
+    my $trouble_level   = p_start;
+ 
+    my $self            = par self            => $is_self => shift;
+    my $namespace_regex = par namespace_regex => Filled   => shift;
+
+    p_end \@_;
+ 
+    return undef if validation_trouble($trouble_level);
+    
+    # --- run sub -----------------------------------------------
+
+    my $namespace_infos = $self->get_database()->select(
+                    what  => all =>
+                    from  => 'namespace',
+                    where => [ name => {like => $namespace_regex}
+                    ],
+                );
+                
+    return $self->sort_by( name => $namespace_infos );        
 }
 
 # --- select classes -----------------------------------------------
@@ -124,8 +213,30 @@ sub select_classes {
     
     # --- run sub -----------------------------------------------
 
-    my $class_infos = $self->{DB}->select(
+    my $class_infos = $self->get_database()->select(
                     what  => [qw(ID fullname line_nbr)],
+                    from  => 'class',
+                    where => [ fullname => {like => $class_regex}
+                    ],
+                );
+                
+    return $self->sort_by( fullname => $class_infos );        
+}
+
+sub select_class_objects {
+    my $trouble_level = p_start;
+ 
+    my $self          = par self        => $is_self => shift;
+    my $class_regex   = par class_regex => Filled   => shift;
+
+    p_end \@_;
+ 
+    return undef if validation_trouble($trouble_level);
+    
+    # --- run sub -----------------------------------------------
+
+    my $class_infos = $self->get_database()->select(
+                    what  => 'all',
                     from  => 'class',
                     where => [ fullname => {like => $class_regex}
                     ],
@@ -147,7 +258,7 @@ sub select_methods {
     # --- run sub -----------------------------------------------
 
     my $method_infos = 
-        $self->{DB}->select(
+        $self->get_database()->select(
             what  => [qw(ID class_ID name line_nbr)],
             from  => 'method',
             where => [ name => {like => $method_regex}
@@ -174,7 +285,7 @@ sub select_methods_of_classes {
     
     # --- run sub -----------------------------------------------
 
-    my $class_infos = $self->{DB}->select(
+    my $class_infos = $self->get_database()->select(
                     what  => [qw(ID fullname line_nbr)],
                     from  => 'class',
                     where => [ fullname => {like => $class_name_regex}
@@ -184,7 +295,7 @@ sub select_methods_of_classes {
     my @class_ids = map { $_->{ID}; } @$class_infos;
     
     my $method_infos = 
-        $self->{DB}->select(
+        $self->get_database()->select(
             what  => [qw(ID class_ID name line_nbr)],
             from  => 'method',
             where => [ class_ID => [@class_ids],
@@ -217,7 +328,7 @@ sub join_class_to_method {
     my @class_ids = sort keys %class_ids_hash;
     # say "# class Ids @class_ids";
         
-    my $class_infos_selection = $self->{DB}->select(
+    my $class_infos_selection = $self->get_database()->select(
         what  => [qw(ID fullname)],
         from  => 'class',
         where => [ ID => {in => [@class_ids] }

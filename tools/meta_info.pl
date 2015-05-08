@@ -94,8 +94,9 @@ sub print_help {
     say "# ====================";
     say "#   Help";
     say "# ====================";
-    say "# c:  select classes: <class_regex>";
-    say "# m:  select methods: <method_regex>";
+    say "# n:  select namespace: <namespace_regex>";
+    say "# c:  select classes:   <class_regex>";
+    say "# m:  select methods:   <method_regex>";
     say "# mc: select methods of classes: <class_regex> <method_regex>";
     say "# qq: quit";
     say "# h:  history";
@@ -123,7 +124,25 @@ while (my $command_str = <STDIN>) {
     
     $command = lc($command || '<undef>');
     
-    if ($command eq 'c') {
+    if ($command eq 'n') {
+        my $name_regex = handle_regex($args[0]);
+        
+        say "# select namespaces '$name_regex'";
+
+        my $namespace_infos = $meta_perl_info_service->select_namespaces($name_regex);
+
+        my $namespace_count = scalar @$namespace_infos;
+        
+        if ($namespace_count > $max_class_rows) {
+            say "# $namespace_count namespaces found, list only first $max_class_rows";
+        }
+        else {
+            say "# $namespace_count namespaces found.";
+        }
+    
+        auto_report( $namespace_infos, -max_rows => $max_class_rows);
+    }
+    elsif ($command eq 'c') {
         my $name_regex = handle_regex($args[0]);
         
         say "# select classes '$name_regex'";
