@@ -9,6 +9,8 @@
 #
 #==============================================================================
 
+# s/^'//o;
+
 use strict;
 use vars qw($VERSION);
 $VERSION ='0.101';
@@ -52,16 +54,11 @@ our $meta_perl_info_service = new Perl5::MetaInfo::DB();
 
 $meta_perl_info_service->read($perl_meta_db_file);
 
-# ----------
-
-# s/^'//o;
-
 say "# select classes ...";
 
 my $class_info_list     = $meta_perl_info_service->select_complete_class_infos();
 my $namespace_info_list = $meta_perl_info_service->select_complete_namespace_infos();
 
-# say Dumper $class_info_list->[0];
 sub create_path_for_file {
     my $trouble_level  = p_start;
 
@@ -107,8 +104,6 @@ sub combine_html_paths {
     
     my $result_path = "$drive$path"; 
 
-    # say $result_path;
-
     return $result_path;
 }
 
@@ -128,8 +123,6 @@ sub prepare_html_filenames {
         my $fullname = $meta_info->{$name_property};
         my $module_source = 'modules';
         
-        # say $fullname;
-        
         if ($meta_info->{filename} =~ /^{(\w+)}/) {
             $module_source = $1;
         } 
@@ -138,9 +131,9 @@ sub prepare_html_filenames {
         
         my $html_file = "$html_output_path/$module_source/$fullname.html";
         $html_file =~ s{::}{/}og;
+        
         create_path_for_file($html_file);
-        # say $html_file;
-    
+        
         $meta_info->{_html_file} = $html_file;
     }
 }
@@ -251,8 +244,6 @@ sub build_home_link {
     my $dir_level = scalar (@namespace_splitted);
     my $top_path  = "../" x $dir_level;
     
-    # say "$dir_level $top_path $namespace";
-    
     return "<a href='${top_path}_index.html'>Home</a>";
 }
 
@@ -279,8 +270,6 @@ sub build_namespace_links_up {
     
     $namespace_html =~ s/::$//;
     
-    # say $namespace_html;
-    
     return $namespace_html;
 }
 
@@ -299,24 +288,19 @@ sub build_namespace_links_down {
     return "" unless $namespace;
     
     my @dirs_up = split (/::?/, $start_dir);
-    # shift @dirs_up;
-    my $dir_up = join('/', map { ".." } @dirs_up);
-    $dir_up .= '/' if $dir_up;
-    
-    # say "dir_up $dir_up";
+    my $dir_up  = join('/', map { ".." } @dirs_up);
+    $dir_up    .= '/' if $dir_up;
     
     my $namespace_html = "";
     
     my $dir_down = "";
     foreach my $part (split (/::?/, $namespace)) {
-        $dir_down .= $part;
+        $dir_down       .= $part;
         $namespace_html .= "<a href='$dir_up$dir_down/_index.html'>$part</a>::";
-        $dir_down .= '/';
+        $dir_down       .= '/';
     }
     
     $namespace_html =~ s/::$//;
-    
-    # say "namespace_html = $namespace_html";
     
     return $namespace_html;
 }
@@ -341,8 +325,6 @@ sub report_class_methods {
     my @method_list;
     foreach my $method_name (sort(keys %{$class_info->{subs}})) {
         my $method_info = $class_info->{subs}->{$method_name};
-        # say "\t$method_info->{name}";
-        
         push (@method_list, $method_info);
     }
 
@@ -423,7 +405,6 @@ sub report_namespace {
         ->select_class_objects('^'.$namespace.'::\w+$');
  
     print "with ".scalar(@$class_info_list)." classes ... ";
-    # say Dumper ($class_info_list);
     
     my $report         = create_class_overview_report($namespace);
     my $namespace_path = $namespace || '.';
@@ -432,8 +413,6 @@ sub report_namespace {
         my $report_file    = create_path_for_file(
             "$html_output_path/$lib_dir/$namespace_path/_index.html"
         );
-        
-        # say $report_file;
         
         my $report_file_handle = new FileHandle;
         $report_file_handle->open(">$report_file");
@@ -469,15 +448,7 @@ sub report_namespace {
 }
 
 prepare_html_filenames(fullname => $class_info_list);
-
-say "namespace filenames";
-# print Dumper($namespace_info_list);
-
 prepare_namespace_html_filenames($namespace_info_list);
-
-# print Dumper($namespace_info_list);
-
-# die "STOP";
 
 report_class_overview_list($class_info_list);
 
@@ -494,4 +465,58 @@ foreach my $namespace (@namespace_keys) {
     report_namespace($namespace);
 }
 
-say '*** All Done ***';
+say '# === All done. ========================';
+
+
+1;
+
+__END__
+
+=head1 NAME
+
+meta_scan.pl - Pure perl tool to extract meta data from perl source code
+
+Scan dirs with perl source code for packages and subs,
+fill this meta information into a PQL::Cache and
+dump it to file system
+
+=head1 VERSION
+
+This documentation refers to version 0.101 of meta_report.pl
+
+=head1 SYNOPSIS
+
+  meta_report.pl <config_file.pl>
+  
+All parameters are defined in the config file, which is a simple Perl file:
+
+  package MyConfig;
+
+  my $root_dir = '/storage/emulated/legacy';
+
+  sub get {
+      return {
+          -perl_meta_db_file => "$root_dir/perl_sw/info/perl_meta_dump.pl.dump",
+          -cpan_lib_path     => "$root_dir/CCTools/Perl/CPAN/lib",
+          # -perl_lib_path     => '.',
+      };
+  }
+
+  1;
+  
+Create your own config file by copy of android.cfg.pl
+
+=head1 DESCRIPTION
+
+Just create config file and start script. Wait some seconds.
+
+Wait a little longer if database contains infos about local CPAN/Perl installation.
+
+Thats all!
+
+=head2 What is generated
+
+1 html file per module
+
+1 html file per namespace/directory
+
