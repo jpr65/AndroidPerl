@@ -126,7 +126,7 @@ sub prepare_html_filenames {
         my $fullname = $meta_info->{$name_property};
         my $module_source = 'modules';
         
-        if ($meta_info->{filename} =~ /^{(\w+)}/) {
+        if (defined $meta_info->{filename} && $meta_info->{filename} =~ /^{(\w+)}/) {
             $module_source = $1;
         } 
         
@@ -290,7 +290,8 @@ sub build_namespace_links_down {
     
     return "" unless $namespace;
     
-    my @dirs_up = split (/::?/, $start_dir);
+    my @dirs_up;
+    @dirs_up = split (/::?/, $start_dir) if $start_dir;
     my $dir_up  = join('/', map { ".." } @dirs_up);
     $dir_up    .= '/' if $dir_up;
     
