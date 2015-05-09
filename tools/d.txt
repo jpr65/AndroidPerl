@@ -1,1 +1,0 @@
-/storage/emulated/legacy/Android/data/me.sheimi.sgit/files/repo/AndroidPerl/tools

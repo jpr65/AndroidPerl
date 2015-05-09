@@ -15,15 +15,12 @@ use vars qw($VERSION);
 $VERSION ='0.101';
 
 use v5.10;
+use Perl5::Spartanic;
 
 # local cpan adaptions, currently not released on CPAN, but stored in github
-use lib '../cpan/lib';
+use lib '../spartanic/lib';
 
 use Scalar::Validation qw(:all);
-
-# In Android it is difficult to write startup scripts,
-# so I have to add my lib paths here, sorry!
-use lib '/storage/emulated/legacy/CCTools/Perl/CPAN/lib';
 
 # --- rule to validate class, don't remove the () !! --------------------
 my ($is_self) = is_a (__PACKAGE__);

@@ -18,16 +18,14 @@ use v5.10;
 
 use Data::Dumper;
 
-# local cpan adaptions, currently not released on CPAN, but stored in github
-use lib '../cpan/lib';
+# spartanic libs, stored in github
+use lib '../spartanic/lib';
 
-# In Android it is difficult to write startup scripts,
-# so I have to add my lib paths here, sorry!
-use lib '/storage/emulated/legacy/CCTools/Perl/CPAN/lib';
-
-use Report::Porf qw(:all);
+use Perl5::Spartanic;
 use Scalar::Validation qw(:all);
 use PQL::Cache qw (:all);
+use Report::Porf qw(:all);
+
 use Perl5::MetaInfo::DB;
 
 # --- handle call args and configuration ----
@@ -96,8 +94,9 @@ sub print_help {
     say "# ====================";
     say "#   Help";
     say "# ====================";
-    say "# c:  select classes: <class_regex>";
-    say "# m:  select methods: <method_regex>";
+    say "# n:  select namespace: <namespace_regex>";
+    say "# c:  select classes:   <class_regex>";
+    say "# m:  select methods:   <method_regex>";
     say "# mc: select methods of classes: <class_regex> <method_regex>";
     say "# qq: quit";
     say "# h:  history";
@@ -125,7 +124,25 @@ while (my $command_str = <STDIN>) {
     
     $command = lc($command || '<undef>');
     
-    if ($command eq 'c') {
+    if ($command eq 'n') {
+        my $name_regex = handle_regex($args[0]);
+        
+        say "# select namespaces '$name_regex'";
+
+        my $namespace_infos = $meta_perl_info_service->select_namespaces($name_regex);
+
+        my $namespace_count = scalar @$namespace_infos;
+        
+        if ($namespace_count > $max_class_rows) {
+            say "# $namespace_count namespaces found, list only first $max_class_rows";
+        }
+        else {
+            say "# $namespace_count namespaces found.";
+        }
+    
+        auto_report( $namespace_infos, -max_rows => $max_class_rows);
+    }
+    elsif ($command eq 'c') {
         my $name_regex = handle_regex($args[0]);
         
         say "# select classes '$name_regex'";
