@@ -6,7 +6,7 @@
 #
 #  Part of Perl5::Spartanic::IDE
 #
-# Ralf Peine, Fri May 01 09:00 2015
+# Ralf Peine, Sat May  9 15:10:35 2015
 #
 #==============================================================================
 
@@ -16,7 +16,7 @@ use strict;
 use warnings;
 
 use vars qw($VERSION);
-$VERSION ='0.101';
+$VERSION ='0.110';
 
 use v5.10;
 use Perl5::Spartanic;

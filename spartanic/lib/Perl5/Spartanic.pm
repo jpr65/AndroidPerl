@@ -12,7 +12,7 @@
 #      - Core modules
 #      - Some other spartanic modules   
 #
-# Ralf Peine, Fri May 01 17:00 2015
+# Ralf Peine, Sat May  9 15:11:00 2015
 #
 #==============================================================================
 
@@ -22,7 +22,7 @@ use strict;
 use warnings;
 
 use vars qw($VERSION);
-$VERSION ='0.100';
+$VERSION ='0.110';
 
 # methods will follow!
 
