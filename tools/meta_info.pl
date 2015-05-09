@@ -5,23 +5,26 @@
 #      Read dump of PQL::Cache created by meta_scan.pl and
 #      start query info system.
 #
-# Ralf Peine, Mon Apr 27 21:45:17 2015
+# Ralf Peine, Sat May  9 15:06:36 2015
 #
 #==============================================================================
 
 use strict;
-use vars qw($VERSION);
-$VERSION ='0.101';
+use warnings;
 
 $| = 1;
+
+use vars qw($VERSION);
+$VERSION ='0.110';
+
 use v5.10;
 
 use Data::Dumper;
 
 # spartanic libs, stored in github
 use lib '../spartanic/lib';
-
 use Perl5::Spartanic;
+
 use Scalar::Validation qw(:all);
 use PQL::Cache qw (:all);
 use Report::Porf qw(:all);

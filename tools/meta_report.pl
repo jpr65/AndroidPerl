@@ -5,17 +5,20 @@
 #      Read dump of PQL::Cache created by meta_scan.pl and
 #      create documentation.
 #
-# Ralf Peine, Mon May 03 08:33:17 2015
+# Ralf Peine, Sat May  9 15:06:22 2015
 #
 #==============================================================================
 
 # s/^'//o;
 
 use strict;
-use vars qw($VERSION);
-$VERSION ='0.101';
+use warnings;
 
 $| = 1;
+
+use vars qw($VERSION);
+$VERSION ='0.110';
+
 use v5.10;
 
 use Data::Dumper;
@@ -94,7 +97,7 @@ sub combine_html_paths {
 
     # windows path like E:bla
     if ($path =~ m{(^[A-Za-z]:)(.*)}) {
-	       $drive = $1;
+	       $drive = "file:///$1";
 	       $path  = $2;
     }
     
