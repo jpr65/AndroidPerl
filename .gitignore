@@ -1,9 +1,9 @@
+*~
+*.*~
+html/*
 tools/dmrz.cfg.pl
-*.pl~
+tools/henriks_pc.cfg.pl
 tools/mi.bat
 tools/ms.bat
-cpan/lib/Perl5/MetaInfo/DB.pm~
-tools/mi.bat~
-*.bat~
+tools/mr.bat
 tools/t.pl
-tools/henriks_pc.cfg.pl
