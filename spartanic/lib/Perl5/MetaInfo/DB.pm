@@ -139,6 +139,31 @@ sub read {
     say '# '.scalar (@$methods) . " method infos loaded.";
 }
 
+# --- Prepare instance to be dumped, remove all code_refs -----------------
+
+sub write {
+    my $trouble_level = p_start;
+ 
+    my $self          = par self      => $is_self => shift;
+    my $dump_file     = par dump_file => Filled   => shift;
+    
+    p_end \@_;
+ 
+    return undef if validation_trouble($trouble_level);
+    
+    # --- run sub -----------------------------------------------
+
+    $self->{DB}->prepare_dump();
+    
+    local $Data::Dumper::Purity = 1;
+    
+    my $fh = new FileHandle(">$dump_file");
+    print $fh "package PerlMeta;\nsub load_cache {\n my ";
+    print $fh Dumper($self->{DB});
+    print $fh 'return $VAR1;'."\n}\n1;\n";
+    close $fh;   
+}
+
 sub select_complete_namespace_infos {
     my $trouble_level = p_start;
  

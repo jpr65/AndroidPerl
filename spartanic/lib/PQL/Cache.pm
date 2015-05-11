@@ -66,6 +66,16 @@ sub _init
     $self->_implement_compare_subs();
 }
 
+# --- Prepare instance to be dumped, remove all code_refs -----------------
+sub prepare_dump {
+    my ($self,           # instance_ref
+        ) = @_;
+        
+    $self->{_step2_subs} = {};
+    $self->{_combine_subs} = {};
+    $self->{_compare_subs} = {};
+}
+
 # --- implement compare subs ----------------------------------------------------------------
 sub _implement_compare_subs {
     my ($self,           # instance_ref

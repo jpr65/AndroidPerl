@@ -235,16 +235,9 @@ my $method_meta_infos = $meta_infos->select(
 say '# ' . $#$class_meta_infos  . ' classes found.';
 say '# ' . $#$method_meta_infos . ' methods found.';
 
-{
-    local $Data::Dumper::Purity = 1;
+say "# Dump DB into file $perl_meta_db_file ...";
     
-    say "# Dump DB into file $perl_meta_db_file ...";
-    my $fh = new FileHandle(">$perl_meta_db_file");
-    print $fh "package PerlMeta;\nsub load_cache {\n my ";
-    print $fh Dumper($meta_infos);
-    print $fh 'return $VAR1;'."\n}\n1;\n";
-    close $fh;
-}
+$meta_perl_info_service->write($perl_meta_db_file);
                 
 say '# === All done. ========================';
 
