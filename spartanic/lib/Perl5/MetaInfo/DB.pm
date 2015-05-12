@@ -85,7 +85,7 @@ sub new_database {
     $meta_infos->set_table_definition(
         class => {
             keys => [qw(ID fullname)],
-            columns => [qw(namespace classname filename line_nbr)]
+            columns => [qw(namespace classname filename location line_nbr)]
         }
     );
 
@@ -139,7 +139,7 @@ sub read {
     say '# '.scalar (@$methods) . " method infos loaded.";
 }
 
-# --- Prepare instance to be dumped, remove all code_refs -----------------
+# --- Dump internal database into file -----------------
 
 sub write {
     my $trouble_level = p_start;

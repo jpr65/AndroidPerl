@@ -174,18 +174,21 @@ sub create_class_overview_report {
     my $report    = $framework->create_report('html');
     
     $report->cc(-h => 'ID',        -w =>  5,  -vn => 'ID',
-                                   -a => 'r', -f  => "%5d");
-    $report->cc(-h => 'Name',      -w => 30,  -a  =>'c', -esc => 0,
+                                   -a => 'r', -f  => "%5d"
+    );
+    $report->cc(-h => 'Name',      -w => 30,  -a  => 'c',    -esc => 0,
                 -v => sub { '<a href="' . combine_html_paths($_[0]->{_html_file}) .'">'
                                         . $_[0]->{classname}  . '</a>'; 
                           }
-    );
-    $report->cc(-h => 'Namespace', -w => 30, -esc => 0,
+    );              
+    $report->cc(-h => 'Location',  -w =>  8,   -a => 'c', -vn  => 'location');
+    $report->cc(-h => 'Namespace', -w => 30, -esc =>   0,
                 -v  => sub { build_namespace_links_down($current_namespace, $_[0]->{'namespace'}); 
                            }
     );
     $report->cc(-h => '#Line',     -w =>  5,  -v  => '$_[0]->{line_nbr} || 0',
-                                   -a => 'r', -f  => "%5d");
+                                   -a => 'r', -f  => "%5d"
+    );
     $report->cc(-h => 'File',      -w => 45,  -vn => 'filename');
     
     $report->configure_complete();

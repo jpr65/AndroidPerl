@@ -54,10 +54,19 @@ my $perl_meta_db_file = npar -perl_meta_db_file =>              Filled      => $
 my $cpan_lib_path     = npar -cpan_lib_path     => -Optional => ExistingDir => $config;
 my $perl_lib_path     = npar -perl_lib_path     => -Optional => ExistingDir => $config;
 
-my @paths = map {$_ ? $_:()}  (
-    $cpan_lib_path,
-    $perl_lib_path,
-);
+my $scan_paths        = npar -scan_paths        => -Optional => HashRef     => $config;
+
+# my @paths = map {$_ ? $_:()}  (
+#     $cpan_lib_path,
+#     $perl_lib_path,
+# );
+
+unless (defined $scan_paths) {
+    $scan_paths = {};
+    
+    $scan_paths->{CPAN} = $cpan_lib_path if $cpan_lib_path;
+    $scan_paths->{Perl} = $perl_lib_path if $perl_lib_path;
+}
 
 my $meta_perl_info_service = new Perl5::MetaInfo::DB();
 my $meta_infos             = $meta_perl_info_service->new_database();
@@ -113,7 +122,8 @@ sub insert_namespace {
 
 sub scan_file {
     my $file = par PerlFile => ExistingFile => shift;
-    
+    my $part = par part     => Filled       => shift;
+    my $path = par path     => ExistingDir  => shift; 
     # say "# --- scan $file ---";
     
     my $fh = new FileHandle();
@@ -121,14 +131,31 @@ sub scan_file {
     
     return unless $fh->open($full_file_name);
     
+    my @file_content = $fh->getlines();
+    $fh->close;
+    
+    scan_content($full_file_name, \@file_content, $part, $path);
+}
+    
+sub scan_content {
+    my $full_file_name = par full_file_name => Filled   => shift;
+    my $file_content   = par file_content   => ArrayRef => shift;
+    my $part           = par part     => Filled       => shift;
+    my $path           = par path     => ExistingDir  => shift; 
+    
+    say "# --- scan content of $full_file_name ---";
+    $full_file_name =~ s{$path/}{{$part}/}i;
+    
     my $full_class;
     my $current_class_id = 1;
     my $line;
     my $class_meta_info;
     
-    $full_file_name =~ s{.*/CCTools/Perl/CPAN/}{{CPAN}/}io;
-    while (my $line = <$fh>) {
+    my $line_nbr = 0;
+    while (my $line = shift @$file_content) {
         $line =~ s/\s+$//o;
+        
+        $line_nbr++;
         
         last if $line =~ /^\s*__END__$/;
         
@@ -148,9 +175,10 @@ sub scan_file {
                     ID        => $current_class_id,
                     fullname  => $full_class,
                     filename  => $full_file_name,
+                    location  => $part,
                     namespace => $namespace,
                     classname => $class_name,
-                    line_nbr  => $.,
+                    line_nbr  => $line_nbr,
                     line      => $line,
                     subs     => {},
                 };
@@ -172,7 +200,7 @@ sub scan_file {
                     ID       => $current_method_id,
                     name     => $sub_name,
                     class_ID => $current_class_id,
-                    line_nbr => $.,
+                    line_nbr => $line_nbr,
                     line     => $line,
                 };
                 
@@ -194,6 +222,7 @@ say '';
 
 $meta_infos->insert(class => {
                         ID        => $next_class_id++,
+                        location  => '-',
                         fullname  => 'main',
                         filename  => '',
                         namespace => '',
@@ -207,20 +236,23 @@ $meta_infos->insert(class => {
 say '# --- dirs to scan recursive ------------------------------------';
 say '';
 
-foreach (@paths) { say };
+foreach (sort (values (%$scan_paths))) { say };
 
 say '';
 say '# --- start scan ---';
 say '';
 
-find( sub {
-    if (-d $_) {
-       say "# --- scan dir $_ ---";
-    }
-    elsif (/\.pm$/i) {
-        scan_file($_);
-    }
-}, @paths);
+foreach my $part (sort (keys (%$scan_paths))) {
+    my $path = $scan_paths->{$part};
+    find( sub {
+        if (-d $_) {
+           say "# --- scan dir $_ ---";
+        }
+        elsif (/\.pm$/i) {
+            scan_file($_, $part, $path);
+        }
+    }, $path);
+}
                 
 my $class_meta_infos = $meta_infos->select(
                 what => all    =>
