@@ -47,6 +47,14 @@ my $config = MyConfig::get();
 
 our $perl_meta_db_file = npar -perl_meta_db_file => ExistingFile => $config;
 our $html_output_path  = npar -html_out_path     => ExistingDir  => $config;
+our $doc_path_hashref  = npar -doc_paths         => HashRef      => $config;
+
+foreach my $doc_region (sort(keys(%$doc_path_hashref))) {
+    unless (-d $doc_path_hashref->{$doc_region}) {
+        my $not_existing_path = delete $doc_path_hashref->{$doc_region};
+        say "# ignore not existing documentation path $not_existing_path";
+    }
+}
 
 our $startup_file      = "$html_output_path/_index.html";
 
@@ -158,6 +166,35 @@ sub prepare_namespace_html_filenames {
     prepare_html_filenames(_index_html_filename => $namespace_info_list);
 }
 
+sub build_doc_filename {
+
+    my $trouble_level = p_start;
+    
+    my $html_file = par full_class_name => Filled => shift;
+    
+    p_end \@_;
+ 
+    return undef if validation_trouble($trouble_level);
+    
+    # --- run sub -----------------------------------------------
+    
+    $html_file =~ s{::}{/}og;
+    
+    my $link ='';
+    
+    foreach my $doc_path_name (sort(keys(%$doc_path_hashref))) {
+        my $doc_path = $doc_path_hashref->{$doc_path_name};
+        
+        my $full_html_file = "$doc_path/$html_file.html";
+        if (-f $full_html_file) {
+            $link .= ', ' if $link;
+            $link .= "<a href='$full_html_file'>$doc_path_name</a>";
+        }
+    }
+    
+    return $link;
+}
+
 sub create_class_overview_report {
     my $trouble_level     = p_start;
     
@@ -173,13 +210,20 @@ sub create_class_overview_report {
     my $framework = Report::Porf::Framework::get();
     my $report    = $framework->create_report('html');
     
-    $report->cc(-h => 'ID',        -w =>  5,  -vn => 'ID',
-                                   -a => 'r', -f  => "%5d"
+    # $report->cc(-h => 'ID',        -w =>  5,  -vn => 'ID',
+    #                                -a => 'r', -f  => "%5d"
+    # );
+    $report->cc(-h => 'PerlVers', -w =>  5,  -a  => 'l',   -vn  => 'perl_vers');
+    $report->cc(-h => '#subs',    -w =>  5,  -v  => sub { scalar (keys($_[0]->{subs})); },
+                                  -a => 'r', -f  => "%3d"
     );
-    $report->cc(-h => 'Name',      -w => 30,  -a  => 'c',    -esc => 0,
-                -v => sub { '<a href="' . combine_html_paths($_[0]->{_html_file}) .'">'
+    $report->cc(-h => 'Name (Methods)',      -w => 30,  -a  => 'c',    -esc => 0,
+                -v => sub { '<a href="' . $_[0]->{_html_file} .'">'
                                         . $_[0]->{classname}  . '</a>'; 
                           }
+    );              
+    $report->cc(-h => 'Doc', -w => 3, -a  => 'c', -esc => 0,
+                -v => sub { build_doc_filename($_[0]->{fullname}); }
     );              
     $report->cc(-h => 'Location',  -w =>  8,   -a => 'c', -vn  => 'location');
     $report->cc(-h => 'Namespace', -w => 30, -esc =>   0,

@@ -150,6 +150,8 @@ sub scan_content {
     my $current_class_id = 1;
     my $line;
     my $class_meta_info;
+    my @modules_used;
+    my $perl_version = '';
     
     my $line_nbr = 0;
     while (my $line = shift @$file_content) {
@@ -157,9 +159,19 @@ sub scan_content {
         
         $line_nbr++;
         
-        last if $line =~ /^\s*__END__$/;
+        last if $line =~ /^\s*__END__\s*$/;
         
-        if ($line =~ /^\s*package\s+([\w:]+);/) {
+        if ($line =~ /^\s*use\s([\w\.:]+)/) {
+            my $used_str = $1;
+            if ($used_str =~ /^v?([\d\.]+)$/) {
+                $perl_version = $1;
+                $class_meta_info->{perl_vers} = $perl_version if $class_meta_info;
+            }
+            else { 
+                push (@modules_used, $used_str);
+            }
+        }
+        elsif ($line =~ /^\s*package\s+([\w:]+);/) {
             $full_class = $1;
             # say "class $full_class";
             
@@ -171,7 +183,7 @@ sub scan_content {
                 $class_name = $2;
             }
             $current_class_id = $next_class_id++;
-            $class_meta_info = {
+            $class_meta_info  = {
                     ID        => $current_class_id,
                     fullname  => $full_class,
                     filename  => $full_file_name,
@@ -180,7 +192,9 @@ sub scan_content {
                     classname => $class_name,
                     line_nbr  => $line_nbr,
                     line      => $line,
-                    subs     => {},
+                    perl_vers => $perl_version,  
+                    subs      => {},
+                    uses      => \@modules_used,
                 };
             $meta_infos->insert(class => 
                 $class_meta_info
@@ -191,7 +205,7 @@ sub scan_content {
                 $namespace =~ s/::\w+$//;
             }
         }
-        elsif ($line =~ /^\s*sub\s+(\w+)(.*)/){
+        elsif ($line =~ /^\s*sub\s+(\w+)(.*)/) {
             my $sub_name = $1;
             my $sub_rest_of_line = $2;
             
@@ -212,7 +226,7 @@ sub scan_content {
         # $meta_infos->{$doc_class_name}->{subs}->{$doc_class_method} = {};
         }
     }
-    
+    # say "# used: @modules_used";
     # say "# --- done ---";
 }
 
@@ -229,7 +243,9 @@ $meta_infos->insert(class => {
                         classname => 'main',
                         line_nbr  => '',
                         line      => '',
-                        subs     => {},
+                        perl_vers => '',  
+                        subs      => {},
+                        uses      => [],
                 }
 );
 
@@ -244,6 +260,9 @@ say '';
 
 foreach my $part (sort (keys (%$scan_paths))) {
     my $path = $scan_paths->{$part};
+    
+    $path = File::Spec->rel2abs($path);
+    
     find( sub {
         if (-d $_) {
            say "# --- scan dir $_ ---";

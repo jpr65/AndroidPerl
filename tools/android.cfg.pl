@@ -17,9 +17,13 @@ sub get {
         -html_out_path     => "$root_dir/perl_sw/info",
         -scan_paths        => { 
                                 CPAN => "$root_dir/CCTools/Perl/CPAN/lib",
-                                PERL => "$root_dir/CCTools/backup/perl_5.18.1_armel.zip",
-                                PROJ => '../lib'
+                                PERL => "$root_dir/perl_sw/perl_lib",
+                                PROJ => '../lib',
+                                SPRT => '../spartanic/lib',
                               },
+        -doc_paths         => {
+                                PERL => "$root_dir/perl_sw/doc/perldoc-html",
+        }
     };
 }
 
