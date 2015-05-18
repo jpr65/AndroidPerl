@@ -139,13 +139,14 @@ sub prepare_html_filenames {
         } 
         
         $special_dirs{$module_source}++;
-        
-        my $html_file = "$html_output_path/$module_source/$fullname.html";
+
+	my $html_file = $html_output_path;
+        $html_file .= "/$module_source/$fullname.html";
         $html_file =~ s{::}{/}og;
-        
+
         create_path_for_file($html_file);
         
-        $meta_info->{_html_file} = $html_file;
+	$meta_info->{_html_file} = $html_file;
     }
 }
 
@@ -192,7 +193,24 @@ sub build_doc_filename {
         }
     }
     
-    return $link;
+    return prepare_url($link);
+}
+
+# add file:/// if 
+sub prepare_url {
+    my $trouble_level = p_start;
+    
+    my $url           = par url => Scalar => shift;
+    
+    p_end \@_;
+ 
+    return undef if validation_trouble($trouble_level);
+    
+    # --- run sub -----------------------------------------------
+        
+    $url = "file:///$url" if $url =~ /^\w:/;
+
+    return $url;
 }
 
 sub create_class_overview_report {
@@ -218,7 +236,7 @@ sub create_class_overview_report {
                                   -a => 'r', -f  => "%3d"
     );
     $report->cc(-h => 'Name (Methods)',      -w => 30,  -a  => 'c',    -esc => 0,
-                -v => sub { '<a href="' . $_[0]->{_html_file} .'">'
+                -v => sub { '<a href="' . prepare_url($_[0]->{_html_file}) .'">'
                                         . $_[0]->{classname}  . '</a>'; 
                           }
     );              
