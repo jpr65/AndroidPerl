@@ -102,6 +102,12 @@ sub new_database {
         }
     );
     
+    $meta_infos->set_table_definition(
+        uses => {
+            keys => [qw(ID class_ID used)],
+        }
+    );
+    
     return $self->{DB} = $meta_infos;
 }
 
@@ -293,7 +299,7 @@ sub select_methods {
     return $self->
         sort_by(
             name =>
-            $self->join_class_to_method($method_infos),
+            $self->join_in_class($method_infos),
     );
 }
 
@@ -310,14 +316,7 @@ sub select_methods_of_classes {
     
     # --- run sub -----------------------------------------------
 
-    my $class_infos = $self->get_database()->select(
-                    what  => [qw(ID fullname line_nbr)],
-                    from  => 'class',
-                    where => [ fullname => {like => $class_name_regex}
-                    ],
-    );
-        
-    my @class_ids = map { $_->{ID}; } @$class_infos;
+    my @class_ids = $self->preselect_class_ids($class_name_regex);
     
     my $method_infos = 
         $self->get_database()->select(
@@ -331,16 +330,94 @@ sub select_methods_of_classes {
     return $self->
         sort_by(
             name =>
-            $self->join_class_to_method($method_infos),
+            $self->join_in_class($method_infos),
     );
 }
 
-# --- Add infos of class to method infos ---------------------------
-sub join_class_to_method {
+sub select_uses {
     my $trouble_level = p_start;
  
-    my $self          = par self      => $is_self     => shift;
-    my $method_list   = par method_list => ArrayRef => shift;
+    my $self            = par self            => $is_self => shift;
+    my $uses_name_regex = par uses_name_regex => Filled   => shift;
+    
+    p_end \@_;
+ 
+    return undef if validation_trouble($trouble_level);
+    
+    # --- run sub -----------------------------------------------
+
+    my $use_infos = $self->get_database()->select(
+                    what  => [qw(ID class_ID used)] =>
+                    from  => 'uses',
+                    where => [ used => {like => $uses_name_regex }
+                    ],
+    );
+    
+    return $self->
+        sort_by(
+            name =>
+            $self->join_in_class($use_infos),
+    );
+}
+
+sub select_uses_of_classes {
+    my $trouble_level = p_start;
+ 
+    my $self             = par self            => $is_self => shift;
+    my $class_name_regex = par class_name_regex  => Filled   => shift;
+    my $uses_name_regex  = par uses_name_regex => Filled   => shift;
+    
+    p_end \@_;
+ 
+    return undef if validation_trouble($trouble_level);
+    
+    # --- run sub -----------------------------------------------
+
+    my @class_ids = $self->preselect_class_ids($class_name_regex);
+    
+    my $use_infos = $self->get_database()->select(
+                    what  => [qw(ID class_ID used)] =>
+                    from  => 'uses',
+                    where => [ class_ID => [@class_ids],
+                               used     => {like => $uses_name_regex }
+                    ],
+    );
+    
+    return $self->
+        sort_by(
+            name =>
+            $self->join_in_class($use_infos),
+    );
+}
+
+sub preselect_class_ids {
+    my $trouble_level = p_start;
+ 
+    my $self              = par self              => $is_self => shift;
+    my $class_name_regex  = par class_name_regex  => Filled   => shift;
+
+    p_end \@_;
+ 
+    return undef if validation_trouble($trouble_level);
+    
+    # --- run sub -----------------------------------------------
+
+    my $class_infos = $self->get_database()->select(
+                    what  => [qw(ID)],
+                    from  => 'class',
+                    where => [ fullname => {like => $class_name_regex}
+                    ],
+    );
+        
+    return map { $_->{ID}; } @$class_infos;    
+}
+
+# --- Add infos of class to method infos ---------------------------
+sub join_in_class {
+    my $trouble_level = p_start;
+ 
+    my $self          = par self        => $is_self => shift;
+    my $element_list  = par element_list => ArrayRef => shift;
 
     p_end \@_;
  
@@ -348,7 +425,7 @@ sub join_class_to_method {
     
     # --- run sub -----------------------------------------------
         
-    my %class_ids_hash = map { $_->{class_ID} ? ($_->{class_ID} => 1) : (1, 1); } @$method_list;
+    my %class_ids_hash = map { $_->{class_ID} ? ($_->{class_ID} => 1) : (1, 1); } @$element_list;
         
     my @class_ids = sort keys %class_ids_hash;
     # say "# class Ids @class_ids";
@@ -364,17 +441,17 @@ sub join_class_to_method {
     
     my %class_infos = map { $_->{ID} => $_; } @$class_infos_selection;
         
-    foreach my $method_info (@$method_list) {
-        my $class_id = delete $method_info->{class_ID} || "1";
+    foreach my $element_info (@$element_list) {
+        my $class_id = delete $element_info->{class_ID} || "1";
         my $class_info_ref = $class_infos{$class_id};
         
-        $method_info->{class} 
+        $element_info->{class} 
             = $class_info_ref
             ? $class_info_ref->{fullname}
             : "?$class_id";
     }
     
-    return $method_list;
+    return $element_list;
 }
 
 sub sort_by {

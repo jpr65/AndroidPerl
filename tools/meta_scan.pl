@@ -74,6 +74,7 @@ my $meta_infos             = $meta_perl_info_service->new_database();
 my $next_class_id    = 1;
 my $next_method_id   = 1;
 my $next_namspace_id = 1;
+my $next_uses_id     = 1;
 
 # --- TODO: Overwork code from cpan -----------
 sub extract_perl_version {
@@ -150,7 +151,7 @@ sub scan_content {
     my $current_class_id = 1;
     my $line;
     my $class_meta_info;
-    my @modules_used;
+    my %modules_used;
     my $perl_version = '';
     
     my $line_nbr = 0;
@@ -168,7 +169,7 @@ sub scan_content {
                 $class_meta_info->{perl_vers} = $perl_version if $class_meta_info;
             }
             else { 
-                push (@modules_used, $used_str);
+                $modules_used{$used_str}++;
             }
         }
         elsif ($line =~ /^\s*package\s+([\w:]+);/) {
@@ -182,6 +183,7 @@ sub scan_content {
                 $namespace  = $1;
                 $class_name = $2;
             }
+            my @modules_used_names = sort (keys (%modules_used));
             $current_class_id = $next_class_id++;
             $class_meta_info  = {
                     ID        => $current_class_id,
@@ -194,7 +196,7 @@ sub scan_content {
                     line      => $line,
                     perl_vers => $perl_version,  
                     subs      => {},
-                    uses      => \@modules_used,
+                    uses      => \@modules_used_names,
                 };
             $meta_infos->insert(class => 
                 $class_meta_info
@@ -226,7 +228,15 @@ sub scan_content {
         # $meta_infos->{$doc_class_name}->{subs}->{$doc_class_method} = {};
         }
     }
-    # say "# used: @modules_used";
+    # say "# used: %modules_used";
+    foreach my $used_module (sort(keys(%modules_used))) {
+        my $uses_info = {
+            ID       => $next_uses_id++,
+            class_ID => $current_class_id,
+            used     => $used_module,
+        };
+        $meta_infos->insert(uses => $uses_info); 
+    }
     # say "# --- done ---";
 }
 

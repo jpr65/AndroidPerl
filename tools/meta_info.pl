@@ -40,6 +40,7 @@ my $config = MyConfig::get();
 
 my $perl_meta_db_file = npar -perl_meta_db_file => ExistingFile => $config;
 my $max_method_rows   = 100;
+my $max_uses_rows     = 100;
 my $max_class_rows    =  30;
 
 # --- load database ------
@@ -76,6 +77,22 @@ sub report_methods {
     );
 }
 
+sub report_uses {
+    my $uses_infos = par method_infos => ArrayRef => shift;
+    
+    my $uses_count = scalar @$uses_infos;
+    if ($uses_count > $max_uses_rows) {
+        say "# $uses_count uses found, list only first $max_uses_rows";
+    }
+    else {
+        say "# $uses_count uses found.";
+    }
+    auto_report(
+        $uses_infos,
+        -max_rows => $max_uses_rows
+    );
+}
+
 sub handle_regex {
     my $regex = par regex => -Default => '.*' => Filled => shift;
 
@@ -101,6 +118,8 @@ sub print_help {
     say "# c:  select classes:   <class_regex>";
     say "# m:  select methods:   <method_regex>";
     say "# mc: select methods of classes: <class_regex> <method_regex>";
+    say "# u:  select uses:      <uses_regex>";
+    say "# uc: select uses of classes:    <class_regex> <uses_regex>";
     say "# qq: quit";
     say "# h:  history";
     say "# ?:  help";
@@ -180,7 +199,19 @@ while (my $command_str = <STDIN>) {
         report_methods($meta_perl_info_service->select_methods_of_classes(
                             $class_name_regex,
                             $method_name_regex,
-                            ));
+                      ));
+    }
+    elsif ($command eq 'u') {
+        my $use_package_name_regex  = handle_regex($args[0]);
+        report_uses($meta_perl_info_service->select_uses($use_package_name_regex));
+    }
+    elsif ($command eq 'uc') {
+        my $class_name_regex       = handle_regex($args[0]);
+        my $use_package_name_regex = handle_regex($args[1]);
+        report_uses($meta_perl_info_service->select_uses_of_classes(
+                        $class_name_regex,
+                        $use_package_name_regex,
+                    ));
     }
     elsif ($command eq 'qq') {
         say "# Goodbye!";
