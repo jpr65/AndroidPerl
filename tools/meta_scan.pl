@@ -130,6 +130,8 @@ sub scan_file {
     my $fh = new FileHandle();
     my $full_file_name = $File::Find::name;
     
+    $full_file_name =~ s{\\}{/}og;
+
     return unless $fh->open($full_file_name);
     
     my @file_content = $fh->getlines();
@@ -145,6 +147,10 @@ sub scan_content {
     my $path           = par path     => ExistingDir  => shift; 
     
     say "# --- scan content of $full_file_name ---";
+
+    $part =~ s{\\}{/}og;
+    $path =~ s{\\}{/}og;
+
     $full_file_name =~ s{$path/}{{$part}/}i;
     
     my $full_class;
