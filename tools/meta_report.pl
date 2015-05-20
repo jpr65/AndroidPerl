@@ -23,7 +23,9 @@ use v5.10;
 
 use Data::Dumper;
 use File::Basename;
-use File::Path qw(make_path);
+use File::Path qw(make_path remove_tree);
+use File::stat;
+use Pod::Html;
 
 # spartanic libs, stored in github
 use lib '../spartanic/lib';
@@ -46,6 +48,7 @@ require $config_file;
 my $config = MyConfig::get();
 
 our $perl_meta_db_file = npar -perl_meta_db_file => ExistingFile => $config;
+our $scan_paths        = npar -scan_paths        => HashRef      => $config;
 our $html_output_path  = npar -html_out_path     => ExistingDir  => $config;
 our $doc_path_hashref  = npar -doc_paths         => HashRef      => $config;
 
@@ -140,13 +143,13 @@ sub prepare_html_filenames {
         
         $special_dirs{$module_source}++;
 
-	my $html_file = $html_output_path;
+	        my $html_file = $html_output_path;
         $html_file .= "/$module_source/$fullname.html";
         $html_file =~ s{::}{/}og;
 
         create_path_for_file($html_file);
         
-	$meta_info->{_html_file} = $html_file;
+	       $meta_info->{_html_file} = $html_file;
     }
 }
 
@@ -184,9 +187,21 @@ sub build_doc_filename {
     my $link ='';
     
     foreach my $doc_path_name (sort(keys(%$doc_path_hashref))) {
-        my $doc_path = $doc_path_hashref->{$doc_path_name};
+        my $doc_path       = $doc_path_hashref->{$doc_path_name};
+        my $source_dir     = $scan_paths->{$doc_path_name};
         
+        my $module_file    = "$source_dir/$html_file.pm";
         my $full_html_file = "$doc_path/$html_file.html";
+        
+        if (-f $module_file) {
+            gen_doc_html(
+                -source_dir  => $source_dir, 
+                -html_dir    => $doc_path,
+                -source_file => $module_file,
+                -html_file   => $full_html_file,
+            );
+        }
+
         if (-f $full_html_file) {
             $link .= ', ' if $link;
             $link .= "<a href='$full_html_file'>$doc_path_name</a>";
@@ -211,6 +226,47 @@ sub prepare_url {
     $url = "file:///$url" if $url =~ /^\w:/;
 
     return $url;
+}
+
+sub gen_doc_html {
+    my $trouble_level = p_start;
+    my %pars          = convert_to_named_params \@_;
+    
+    my $source_dir    = npar -source_dir  => ExistingDir  => \%pars;
+    my $html_dir      = npar -html_dir    => ExistingDir  => \%pars;
+
+    my $source_file   = npar -source_file => ExistingFile => \%pars;
+    my $html_file     = npar -html_file   => Filled       => \%pars;
+    
+    p_end \%pars;
+ 
+    return undef if validation_trouble($trouble_level);
+    
+    # --- run sub -----------------------------------------------
+ 
+    my $gen_html_file = 1;
+ 
+    if (-f $html_file) {
+        my $source_date = stat($source_file)->mtime;
+        my $html_date   = stat($html_file  )->mtime;
+        # say "source_date $source_date";
+        # say "html_date   $html_date";
+        $gen_html_file = 0 if $source_date < $html_date;
+    }
+    
+    if ($gen_html_file) {
+        make_path(dirname($html_file));
+        say "gen doc for $html_file";
+
+        pod2html(
+                 "--podpath=lib:ext:pod:vms",
+                 "--podroot=$source_dir",
+                 "--htmlroot=$html_dir",
+                 "--recurse",
+                 "--infile=$source_file",
+                 "--outfile=$html_file");
+
+    }
 }
 
 sub create_class_overview_report {
@@ -427,6 +483,8 @@ sub report_class_methods {
         
         say $report_file_handle "<h4>$module_filename</h4>";
         say $report_file_handle '<h4>'.localtime().'</h4>';
+        my $doc_file_link = build_doc_filename($fullname);
+        say $report_file_handle "Documentation: $doc_file_link" if $doc_file_link;
         say $report_file_handle '<h4>Subs listed: '.scalar(@method_list).'</h4>';
     
         print $report_file_handle $report->get_table_start();

@@ -23,6 +23,7 @@ sub get {
                               },
         -doc_paths         => {
                                 PERL => "$root_dir/perl_sw/doc/perldoc-html",
+                                CPAN => "$root_dir/perl_sw/doc/cpandoc-html",
         }
     };
 }
