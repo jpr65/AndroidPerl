@@ -118,3 +118,38 @@ $instance->method_arg_mixed("template_scalar_validation.pm",
                             -html_doc => 'bla');
 
 say "Test of template complete!"
+
+1;
+
+=head1 NAME
+
+{Template} - {what it does in one sentence} 
+
+=head1 VERSION
+
+This documentation refers to version 0.100 of {Template}
+
+=head1 SYNOPSIS
+
+  use {Template};
+
+=head1 DESCRIPTION
+
+=head1 SEE ALSO 
+
+=head1 LICENSE AND COPYRIGHT
+
+Copyright (c) 2015 by Ralf Peine, Germany. All rights reserved.
+
+This library is free software; you can redistribute it and/or modify
+it under the same terms as Perl itself, either Perl version 5.6.0 or,
+at your option, any later version of Perl 5 you may have available.
+
+=head1 DISCLAIMER OF WARRANTY
+
+This library is distributed in the hope that it will be useful,
+but without any warranty; without even the implied warranty of
+merchantability or fitness for a particular purpose.
+
+=cut
+
