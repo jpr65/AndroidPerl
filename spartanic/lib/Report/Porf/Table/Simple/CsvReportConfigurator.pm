@@ -65,7 +65,7 @@ sub new
     my $self = {};
     bless $self, $class;
 
-	$self->_init();
+        $self->_init();
 
     return $self;
 }
@@ -75,8 +75,8 @@ sub new
 sub _init {
     my ($self        # instance_ref
         ) = @_;
-	$self->set_data_separator_char(',');
-	$self->set_data_string_char('"');
+        $self->set_data_separator_char(',');
+        $self->set_data_string_char('"');
 }
 
 # --- verbose ---------------------------------------------------------------
@@ -191,8 +191,8 @@ sub configure_report {
             my $right      = "";   # right from value
 
             # --- default value ---------------------------------------
-			my $default_value = get_option_value(\%options, qw (-default_value -def_val -dv));
-			$default_value = $report->get_default_cell_value() unless defined $default_value;
+                        my $default_value = get_option_value(\%options, qw (-default_value -def_val -dv));
+                        $default_value = $report->get_default_cell_value() unless defined $default_value;
 
             # --- value ---------------------------------------
             my $value         = interprete_value_options(\%options);
@@ -212,7 +212,7 @@ sub configure_report {
                 }
             }
             else {
-		$value        = complete_value_code($value, $default_value);
+                $value        = complete_value_code($value, $default_value);
                 $value_action = $report->create_action("$value;");
             }
 
@@ -254,23 +254,27 @@ sub configure_report {
             # --- ---------------------------------------------
             # --- escape separator / string char ----------------------------------------
 
-			my $sep_char = $self->get_data_separator_char();
-			my $string_char = $self->get_data_string_char();
-			
-			my $escape_sep_char_sub_ref = sub {
-				my $value = $_[0];
+            my $sep_char = $self->get_data_separator_char();
+            my $string_char = $self->get_data_string_char();
 
-				if (defined $value && $value =~ /$sep_char|$string_char/) {
-					$value =~ s/$string_char/$string_char$string_char/g;
-					$value = "$string_char$value$string_char";
-				}
+            if ($sep_char =~ m/[\|\/\(\)\?\+\*\.\[\]\{\}]/) {
+                $sep_char = "\\$sep_char";
+            }
+            
+            my $escape_sep_char_sub_ref = sub {
+                my $value = $_[0];
 
-				return $value;
-			};
-			
-			$left   = '$escape_sep_char_sub_ref->('.$left;
-			$right .= ")";
-			
+                if (defined $value && $value =~ /$sep_char|$string_char/) {
+                    $value =~ s/$string_char/$string_char$string_char/g;
+                    $value = "$string_char$value$string_char";
+                }
+
+                return $value;
+            };
+            
+            $left   = '$escape_sep_char_sub_ref->('.$left;
+            $right .= ")";
+                        
             # --- build cell content action ---------------------------------------------
             my $cell_action_str = $left.'$value_action->($_[0])'.$right;
 
@@ -297,7 +301,7 @@ sub configure_report {
             $report->set_bold_header_line('');
         });
     
-	my $cell_end = $report2configure->get_cell_end();
+        my $cell_end = $report2configure->get_cell_end();
 
     #===================================================================================
     #
@@ -321,7 +325,7 @@ sub configure_report {
                 $c++;
             }
 
-			$header_string =~ s/$cell_end$//;
+                        $header_string =~ s/$cell_end$//;
             $header_string .= $report->get_header_row_end();
 
             print "### Header String:$header_string" if verbose($report, 2);
@@ -338,8 +342,8 @@ sub configure_report {
 
             return $report->get_file_start()
                 .$report->get_table_start()
-					.$report->get_header_output();
-			
+                                        .$report->get_header_output();
+                        
             
         });
 
@@ -388,7 +392,7 @@ sub configure_report {
                 $row_string .= $action->($data_ref);
             }
 
-	    $row_string =~ s/$cell_end$//;		
+            $row_string =~ s/$cell_end$//;              
             $row_string .= $report->get_row_end();
 
             print "### Row String:$row_string" if verbose($report, 2);
