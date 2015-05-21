@@ -21,6 +21,25 @@ use Perl5::Spartanic;
 
 use Scalar::Validation qw(:all);
 
+# do nothing if off
+our $off = 0;
+
+# --- count and print ---------
+sub on {
+    $off = 0;
+}
+
+# --- count, but do not print ---------
+sub silent {
+    $off = 1;
+}
+
+# --- silent for existing instances,            -------
+#     new created do nothing, also not counting -------
+sub all_off {
+    $off = 2;
+}
+
 # --- ---------------------------------------------------
 sub create {
     my $trouble_level = p_start;
@@ -42,10 +61,15 @@ sub create {
  
     my $count = 0;
     
-    $name .= ' ' if $name =~ /\S$/;   
+    $name .= ' ' if $name =~ /\S$/;
+    
+    return sub { } if $off > 1;
     
     return sub {
         $count++;
+        
+        return if $off;
+        
         unless ($count % $newline) {
             print "\n$name$count ";
             return;
