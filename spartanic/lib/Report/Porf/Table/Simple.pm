@@ -1178,6 +1178,11 @@ sub create_action {
 
     my $sub_ref = eval ($eval_str);
 
+    if (!$sub_ref || $@) {
+        die "cannot create action with: $action_str\n"
+            ."               eval error: $@";
+    } 
+
     print "### ref(sub_ref) ".ref($sub_ref) ."\n" if verbose($self, 3);
     return $sub_ref;
 }
@@ -1193,6 +1198,16 @@ sub configure_complete {
     $action->(@_);
 
     $self->{configure_complete} = 1;
+
+    if (verbose($self, 4)) {
+        my $cell_output_actions = $self->get_cell_output_actions();
+        print "### cell_output_actions: $cell_output_actions\n";
+        print "###             count  : ".scalar (@$cell_output_actions)."\n";
+
+        foreach my $action (@$cell_output_actions) {
+            print "###   action: " . $action. "\n";
+        }
+    }
 }
 
 # --- Now all columns are defined ---------------------------
@@ -1224,7 +1239,7 @@ sub get_row_output {
 
     my $action = $self->get_row_output_action();
     die "No action to output row defined!" unless $action;
-    
+
     $action->($self, $data_ref);
 }
 

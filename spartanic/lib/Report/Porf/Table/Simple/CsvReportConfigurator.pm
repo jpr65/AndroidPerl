@@ -212,7 +212,7 @@ sub configure_report {
                 }
             }
             else {
-				$value        = complete_value_code($value, $default_value);
+		$value        = complete_value_code($value, $default_value);
                 $value_action = $report->create_action("$value;");
             }
 
@@ -260,7 +260,7 @@ sub configure_report {
 			my $escape_sep_char_sub_ref = sub {
 				my $value = $_[0];
 
-				if ($value =~ /$sep_char|$string_char/) {
+				if (defined $value && $value =~ /$sep_char|$string_char/) {
 					$value =~ s/$string_char/$string_char$string_char/g;
 					$value = "$string_char$value$string_char";
 				}
@@ -384,11 +384,11 @@ sub configure_report {
             # --- start new row -----------------------
             $row_string .= $report->get_row_start();
             foreach my $action (@$cell_output_actions_ref) {
-                print "### action $action\n" if verbose($report, 4);
+                print "### row_output_action: action $action\n" if verbose($report, 4);
                 $row_string .= $action->($data_ref);
             }
 
-			$row_string =~ s/$cell_end$//;		
+	    $row_string =~ s/$cell_end$//;		
             $row_string .= $report->get_row_end();
 
             print "### Row String:$row_string" if verbose($report, 2);
