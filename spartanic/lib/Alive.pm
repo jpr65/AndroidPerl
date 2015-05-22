@@ -1,11 +1,11 @@
 #==============================================================================
 #
-#  Alive Tick-Tack (German baby-word for Clock)
+#  Alive Tick-Tack (German baby-word for clock)
 #
 #  to show perl is still alive and working during long time runnings
 #  prints out chars every n-th call 
 #
-#  Ralf Peine, Thu May 21 08:10:35 2015
+#  Ralf Peine, Thu May 22 18:10:35 2015
 #
 #==============================================================================
 
@@ -172,7 +172,7 @@ or fastest
 
 or individual
 
-  my $ticker = Alive::create(
+  my $tick = Alive::create(
       -smaller      => 10,
       -bigger       => 100,
       -newline      => 500,
@@ -182,24 +182,20 @@ or individual
   );
 
   foreach my $i (1..100000) {
-      $ticker->();
+      $tick->();
   }
 
 =head1 DESCRIPTION
 
-Alive does the user inform, that perl job or script is still running by printing to console.
+Alive does inform the user that perl job or script is still running by printing to console.
 
 The following script
 
   $| = 1;
-  use Alive;
-  
-  my $ticker = Alive::create(
-        -newline      => 500,
-  );
+  use Alive qw(:all);
   
   foreach my $i (1..2000) {
-      $ticker->();
+      tack;
   }
 
 prints out this
@@ -219,16 +215,44 @@ that could be created.
 
 =head3 create()
 
-Alive::create() creates a ticker closure (a reference to a anonymous sub) for comfort
+Alive::create() creates a tick closure (a reference to a anonymous sub) for comfort
 and fast calling without method name search and without args. The counter is inside.
 
-Using instances is much more complicated to implement and slower. It is also impossible to 
-misspell any instance method names, because there are no instance methods. 
+Using instances is much more work to implement, slower and not so flexible.
 
-=head3 $ticker->()
+=head4 Parameters
 
-$ticker->() prints out a '.' every 10th call (default), a ',' every 100th call (default) and
+  -smaller      # print every $smaller * $factor call $smaller_char 
+  -bigger       # print every $bigger  * $factor call $bigger_char 
+  -newline      # print every $newline * $factor call "\n$count $name"
+  -factor       
+  -smaller_char 
+  -bigger_char  
+  -name         
+  -counter_ref  # reference to counter that should be used
+  -action       # action will be called by every call of tack; or $tick->();
+
+
+=head3 setup()
+
+Setup create the default ticker tack with same arguments as in create, except that
+
+  # -counter_ref => ignored
+  
+will be ignored.
+
+=head3 tack or $tick->()
+
+$tick->() prints out a '.' every 10th call (default), a ',' every 100th call (default) and
 starts a new line with number of calls done printed every 500th call (default is 1000).
+
+=head3 tacks()
+
+returns the value of the counter used by tack.
+
+=head3 get_tack_counter()
+
+returns a reference to the counter variable used by tack for fast access.
 
 =head2 Running Modes
 
@@ -242,7 +266,7 @@ There are 3 running modes that can be selected:
 
 Call of
 
-  $ticker->();
+  $tick->(); or tack;
   
 prints out what is configured. This is the default.
 
@@ -250,7 +274,7 @@ prints out what is configured. This is the default.
 
 Call of 
 
-  $ticker->();
+  $tick->(); tack;
   
 prints out nothing, but does the counting.
 
@@ -260,16 +284,16 @@ If you need speed up, use
 
   Alive::all_off();
 
-Now nothing is printed or counted by all tickers.
-Selecting this mode gives you maximum speed without removing $ticker->() calls.
+Now nothing is printed or counted by all ticks.
+Selecting this mode gives you maximum speed without removing $tick->() calls.
   
-  my $ticker = Alive::create();
+  my $tick = Alive::create();
   
   Alive::all_off();
 
   my $tick_never = Alive::create();
   
-call of $ticker->(); prints out nothing, but does the counting.
+call of $tick->(); prints out nothing and does not count.
 
 $tick_never has an empty sub which is same as
 
@@ -281,25 +305,23 @@ This $tick_never will also not print out anything, if
   
 is called to enable ticking.
 
+=head2 Using multiple ticks same time
 
-
-=head2 Using multiple tickers same time
-
-You can use multiple tickers same time, like in the following example.
-ticker1 ticks all fetched rows and ticker2 only those, which are selected by
+You can use multiple ticks same time, like in the following example.
+tick1 ticks all fetched rows and tick2 only those, which are selected by
 given filter. So you can see, if database select is still running or halted.
 
   use Alive;
   
   # Ticks all fetched rows
-  my $ticker1 = Alive::create(
+  my $tick1 = Alive::create(
       -name    => '   S',
   );
 
   Alive::all_off();
 
   # To tick rows selected by filter
-  my $ticker2 = Alive::create(
+  my $tick2 = Alive::create(
       -smaller      => 10,
       -bigger       => 100,
       -newline      => 500,
@@ -314,11 +336,11 @@ given filter. So you can see, if database select is still running or halted.
 
   foreach my $i (1..100000) {
       my $row = $sql->fetch_row()
-      $ticker1->();
+      $tick1->();
       
       if ($filter->($row)) {
           push (@filtered_rows, $row);
-          $ticker2->();
+          $tick2->();
       }
       
       Alive::on() if $i == 40000;
