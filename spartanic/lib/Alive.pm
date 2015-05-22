@@ -22,7 +22,10 @@ use Perl5::Spartanic;
 use base qw(Exporter);
 
 our @EXPORT    = qw();
-our @EXPORT_OK = qw(tack);
+our @EXPORT_OK = qw(tack tacks get_tack_counter);
+our %EXPORT_TAGS = (
+    all => [@EXPORT_OK]
+);
 
 use Scalar::Validation qw(:all);
 
@@ -52,12 +55,18 @@ sub create {
     my $trouble_level = p_start;
     my %pars          = convert_to_named_params \@_;
     
-    my $smaller      = npar -smaller      => -Default =>   10 => Int    => \%pars;
-    my $bigger       = npar -bigger       => -Default =>  100 => Int    => \%pars;
-    my $newline      = npar -newline      => -Default => 1000 => Int    => \%pars;
-    my $smaller_char = npar -smaller_char => -Default =>  '.' => Scalar => \%pars;
-    my $bigger_char  = npar -bigger_char  => -Default =>  ',' => Scalar => \%pars;
-    my $name         = npar -name         => -Default =>  ''  => Scalar => \%pars;
+    my $smaller      = npar -smaller      => -Default =>   1 => Int    => \%pars;
+    my $bigger       = npar -bigger       => -Default =>  10 => Int    => \%pars;
+    my $newline      = npar -newline      => -Default => 100 => Int    => \%pars;
+    my $factor       = npar -factor       => -Default =>   1 => Int    => \%pars;
+    my $smaller_char = npar -smaller_char => -Default => '.' => Scalar => \%pars;
+    my $bigger_char  = npar -bigger_char  => -Default => ',' => Scalar => \%pars;
+    my $name         = npar -name         => -Default => ''  => Scalar => \%pars;
+    
+    my $counter      = 0;
+    my $counter_ref  = npar -counter_ref => -Default => \$counter => Ref     => \%pars;
+    
+    my $action       = npar -action      => -Optional             => CodeRef => \%pars;
         
     p_end \%pars;
  
@@ -65,28 +74,37 @@ sub create {
     
     # --- run sub ----------------------------------------
  
-    my $count = 0;
-    
     $name .= ' ' if $name =~ /\S$/;
     
     return sub { } if $off > 1;
     
+    $smaller *= $factor;
+    $bigger  *= $factor;
+    $newline *= $factor;
+    
     return sub {
-        $count++;
+        return if $off > 1;
+        
+        $$counter_ref++;
+        
+        if ($action) {
+            local $_ = $$counter_ref;
+            $action->();
+        }
         
         return if $off;
         
-        unless ($count % $newline) {
-            print "\n$name$count ";
+        unless ($$counter_ref % $newline) {
+            print "\n$name$$counter_ref ";
             return;
         }
         
-        unless ($count % $bigger) {
+        unless ($$counter_ref % $bigger) {
             print $bigger_char;
             return;
         }
         
-        unless ($count % $smaller) {
+        unless ($$counter_ref % $smaller) {
             print $smaller_char;
             return;
         }
@@ -95,10 +113,19 @@ sub create {
 
 # --- default tick tack ----------------------------------
 my $tick;
+my $counter;
 
 # --- setup default tick tack ----------------------------
 sub setup {
-    $tick = create(@_); 
+    $tick = create(@_, -counter_ref => \$counter); 
+}
+
+sub get_tack_counter {
+    return \$counter;
+}
+
+sub tacks {
+    return $counter;
 }
 
 # === the working function ===============================
