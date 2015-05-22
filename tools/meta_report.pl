@@ -243,6 +243,8 @@ sub gen_doc_html {
     return undef if validation_trouble($trouble_level);
     
     # --- run sub -----------------------------------------------
+
+    return unless -f $source_file;
  
     my $gen_html_file = 1;
  
@@ -259,7 +261,7 @@ sub gen_doc_html {
         say "gen doc for $html_file";
 
         pod2html(
-                 "--podpath=lib:ext:pod:vms",
+                 "--podpath=lib:ext:pod:vms:html",
                  "--podroot=$source_dir",
                  "--htmlroot=$html_dir",
                  "--recurse",
