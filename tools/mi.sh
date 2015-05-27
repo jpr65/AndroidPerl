@@ -2,6 +2,6 @@
 
 # meta info
 
-pwd > path.txt
+# pwd > path.txt
 
-# perl -I/storage/emulated/legacy/CCTools/Perl/CPAN/lib meta_info.pl $*
+perl -I/storage/emulated/legacy/CCTools/Perl/CPAN/lib meta_info.pl $*

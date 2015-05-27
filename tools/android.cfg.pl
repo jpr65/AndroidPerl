@@ -11,9 +11,9 @@ my $root_dir = '/storage/emulated/legacy';
 
 sub get {
     return {
-        -trace_mode        => 'off',
+        # -trace_mode        => 'off',
         # -trace_mode        => 'print',
-        # -trace_mode        => 'file',
+        -trace_mode        => 'file',
         -trace_level       => 2,
                               # absolute path needed for file find
         -trace_file        => '/storage/emulated/legacy/perl_sw/info/trace.log',
