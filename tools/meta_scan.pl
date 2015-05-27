@@ -6,7 +6,7 @@
 #      fill this meta information into a PQL::Cache and
 #      dump it to file system
 #
-# Ralf Peine, Sat May  9 15:10:13 2015
+# Ralf Peine, Wed May 26 08:10:13 2015
 #
 #------------------------------------------------------------------------------
 #
@@ -25,7 +25,7 @@ use warnings;
 $| = 1;
 
 use vars qw($VERSION);
-$VERSION ='0.110';
+$VERSION ='0.120';
 
 use v5.10;
 
@@ -37,6 +37,9 @@ use File::Find;
 # local cpan adaptions, currently not released on CPAN, but stored in github
 use lib '../spartanic/lib';
 use Perl5::Spartanic;
+
+use Alive qw(:all);
+use Log::Trace;
 
 use Report::Porf qw(:all);
 use Scalar::Validation qw(:all);
@@ -66,6 +69,49 @@ unless (defined $scan_paths) {
     
     $scan_paths->{CPAN} = $cpan_lib_path if $cpan_lib_path;
     $scan_paths->{Perl} = $perl_lib_path if $perl_lib_path;
+}
+
+# --- setup trace ---
+my $trace_mode  = npar -trace_mode => -Default => off
+                     => -Enum => [qw(off print file)]
+                     => $config;
+                    
+my $trace_level = npar -trace_level => -Default  => -1 => Int    => $config;
+my $trace_file  = npar -trace_file  => -Optional =>    => Filled => $config;
+
+my @trace_args;
+
+if ($trace_mode ne 'off') {
+    
+    my %trace_opts;
+    
+    if ($trace_level >= 0) {
+        $trace_opts{Level} = [$trace_level, undef];
+        $trace_opts{Deep}  = 4;    
+    }
+    
+    if ($trace_mode eq 'file') {
+        $trace_file = par -trace_file  => Filled => $trace_file;
+        @trace_args = ($trace_mode => $trace_file, \%trace_opts);
+        say "# Trace (level $trace_level) into file $trace_file";
+    }
+    else {
+        @trace_args = ($trace_mode => \%trace_opts);
+    }
+    
+    import Log::Trace @trace_args;
+    
+    TRACE '# === Start at ' . localtime() . ' ========================';
+}
+
+if ($trace_mode eq 'print') {
+    Alive::all_off();
+}
+else {
+    Alive::setup(
+        -factor => 10,
+        -name   => '# ',
+    );
 }
 
 my $meta_perl_info_service = new Perl5::MetaInfo::DB();
@@ -120,12 +166,14 @@ sub insert_namespace {
     return 0;
 }
             
-
 sub scan_file {
     my $file = par PerlFile => ExistingFile => shift;
     my $part = par part     => Filled       => shift;
     my $path = par path     => ExistingDir  => shift; 
+    
     # say "# --- scan $file ---";
+    
+    tack;
     
     my $fh = new FileHandle();
     my $full_file_name = $File::Find::name;
@@ -146,8 +194,8 @@ sub scan_content {
     my $part           = par part     => Filled       => shift;
     my $path           = par path     => ExistingDir  => shift; 
     
-    say "# --- scan content of $full_file_name ---";
-
+    TRACE "# --- scan content of $full_file_name ---";
+    
     $part =~ s{\\}{/}og;
     $path =~ s{\\}{/}og;
 
@@ -265,14 +313,14 @@ $meta_infos->insert(class => {
                 }
 );
 
-say '# --- dirs to scan recursive ------------------------------------';
-say '';
+TRACE '# --- dirs to scan recursive ------------------------------------';
+TRACE '';
 
-foreach (sort (values (%$scan_paths))) { say };
+foreach my $dir (sort (values (%$scan_paths))) { TRACE $dir; };
 
-say '';
-say '# --- start scan ---';
-say '';
+TRACE '';
+TRACE '# --- start scan ---';
+TRACE '';
 
 foreach my $part (sort (keys (%$scan_paths))) {
     my $path = $scan_paths->{$part};
@@ -281,7 +329,7 @@ foreach my $part (sort (keys (%$scan_paths))) {
     
     find( sub {
         if (-d $_) {
-           say "# --- scan dir $_ ---";
+           TRACE "# --- scan dir $_ ---";
         }
         elsif (/\.pm$/i) {
             scan_file($_, $part, $path);
@@ -299,14 +347,19 @@ my $method_meta_infos = $meta_infos->select(
                 from => 'method',
                 );
 
-say '# ' . $#$class_meta_infos  . ' classes found.';
-say '# ' . $#$method_meta_infos . ' methods found.';
+TRACE '# ' . $#$class_meta_infos  . ' classes found.';
+TRACE '# ' . $#$method_meta_infos . ' methods found.';
 
-say "# Dump DB into file $perl_meta_db_file ...";
+TRACE "# Dump DB into file $perl_meta_db_file ...";
     
 $meta_perl_info_service->write($perl_meta_db_file);
                 
-say '# === All done. ========================';
+TRACE '# === All done at ' . localtime . ' ========================';
+
+unless ($trace_mode eq 'print') {
+    say '';
+    say '# === All done. ========================';
+}
 
 1;
 

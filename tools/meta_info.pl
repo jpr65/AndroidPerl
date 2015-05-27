@@ -5,7 +5,7 @@
 #      Read dump of PQL::Cache created by meta_scan.pl and
 #      start query info system.
 #
-# Ralf Peine, Sat May  9 15:06:36 2015
+# Ralf Peine, Wed May 26 08:06:36 2015
 #
 #==============================================================================
 
@@ -15,7 +15,7 @@ use warnings;
 $| = 1;
 
 use vars qw($VERSION);
-$VERSION ='0.110';
+$VERSION ='0.120';
 
 use v5.10;
 

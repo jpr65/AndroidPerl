@@ -5,7 +5,7 @@
 #      Read dump of PQL::Cache created by meta_scan.pl and
 #      create documentation.
 #
-# Ralf Peine, Sat May  9 15:06:22 2015
+# Ralf Peine, Wed May 27 08:06:22 2015
 #
 #==============================================================================
 
@@ -17,7 +17,7 @@ use warnings;
 $| = 1;
 
 use vars qw($VERSION);
-$VERSION ='0.110';
+$VERSION ='0.120';
 
 use v5.10;
 
@@ -31,6 +31,9 @@ use Pod::Html;
 use lib '../spartanic/lib';
 
 use Perl5::Spartanic;
+
+use Alive qw(:all);
+use Log::Trace;
 
 use Scalar::Validation qw(:all);
 use PQL::Cache qw (:all);
@@ -47,10 +50,12 @@ require $config_file;
 
 my $config = MyConfig::get();
 
-our $perl_meta_db_file = npar -perl_meta_db_file => ExistingFile => $config;
-our $scan_paths        = npar -scan_paths        => HashRef      => $config;
-our $html_output_path  = npar -html_out_path     => ExistingDir  => $config;
-our $doc_path_hashref  = npar -doc_paths         => HashRef      => $config;
+say "# start meta report ...";
+
+our $perl_meta_db_file = npar -perl_meta_db_file => ExistingFile    => $config;
+our $scan_paths        = npar -scan_paths        => HashRef         => $config;
+our $html_output_path  = npar -html_out_path     => ExistingDir     => $config;
+our $doc_path_hashref  = npar -doc_paths         => HashRef         => $config;
 
 foreach my $doc_region (sort(keys(%$doc_path_hashref))) {
     unless (-d $doc_path_hashref->{$doc_region}) {
@@ -61,6 +66,49 @@ foreach my $doc_region (sort(keys(%$doc_path_hashref))) {
 
 our $startup_file      = "$html_output_path/_index.html";
 
+# --- setup trace ---
+my $trace_mode  = npar -trace_mode => -Default => off
+                     => -Enum => [qw(off print file)]
+                     => $config;
+                    
+my $trace_level = npar -trace_level => -Default  => -1 => Int    => $config;
+my $trace_file  = npar -trace_file  => -Optional =>    => Filled => $config;
+
+my @trace_args;
+
+if ($trace_mode ne 'off') {
+    
+    my %trace_opts;
+    
+    if ($trace_level >= 0) {
+        $trace_opts{Level} = [$trace_level, undef];
+        $trace_opts{Deep}  = 1;    
+    }
+    
+    if ($trace_mode eq 'file') {
+        $trace_file = par -trace_file  => Filled => $trace_file;
+        @trace_args = ($trace_mode => $trace_file, \%trace_opts);
+        say "# Trace into file $trace_file";
+    }
+    else {
+        @trace_args = ($trace_mode => \%trace_opts);
+    }
+    
+    import Log::Trace @trace_args;
+    
+    TRACE '# === Start at ' . localtime() . ' ========================';
+}
+
+if ($trace_mode eq 'print') {
+    Alive::all_off();
+}
+else {
+    Alive::setup(
+        -factor => 10,
+        -name   => '# ',
+    );
+}
+
 # --- load database ------
 
 our $perl_meta_info_db;
@@ -68,10 +116,12 @@ our $meta_perl_info_service = new Perl5::MetaInfo::DB();
 
 $meta_perl_info_service->read($perl_meta_db_file);
 
-say "# select classes ...";
+TRACE "# select classes ...";
 
 my $class_info_list     = $meta_perl_info_service->select_complete_class_infos();
 my $namespace_info_list = $meta_perl_info_service->select_complete_namespace_infos();
+
+# === subs =========================================
 
 sub create_path_for_file {
     my $trouble_level  = p_start;
@@ -446,6 +496,10 @@ sub report_class_methods {
     my $namespace       = $class_info->{namespace};
     my $module_filename = $class_info->{filename};
     my $html_file       = $class_info->{_html_file};
+
+    tack;
+    TRACE_HERE {Level => 3};
+    	TRACE "report $html_file ... ";
     
     my @method_list;
     foreach my $method_name (sort(keys %{$class_info->{subs}})) {
@@ -459,13 +513,12 @@ sub report_class_methods {
     $report->cc(-h => 'ID',    -w =>  5,  -vn => 'ID',   -a => 'r', -f  => "%5d");
     $report->cc(-h => '#Line', -w =>  5,  -v  => '$_[0]->{line_nbr} || 0',
                                -a => 'r', -f  => "%5d");
-    $report->cc(-h => '***',     -w =>  1,  -v => 'return ""; ');
+    $report->cc(-h => '***',   -w =>  1,  -v => 'return ""; ');
     $report->cc(-h => 'Name',  -w => 30,  -vn => 'name');
     
     $report->configure_complete();
     
     my $done = eval {
-	       print "report $html_file ... ";
 	       
 	       my $report_file_handle = new FileHandle;
 
@@ -498,7 +551,7 @@ sub report_class_methods {
         say $report_file_handle '</body>';
         say $report_file_handle '</html>';
 
-	       say "Done";
+	       # TRACE "Done";
 	       1;
     };
 
@@ -526,12 +579,13 @@ sub report_namespace {
     return undef if validation_trouble($trouble_level);
     
     # --- run sub -----------------------------------------------
-    print "generate overview of namespace $namespace ... ";
+    tack;
 
-    my $class_info_list = $meta_perl_info_service
+        my $class_info_list = $meta_perl_info_service
         ->select_class_objects('^'.$namespace.'::\w+$');
  
-    print "with ".scalar(@$class_info_list)." classes ... ";
+    TRACE "generate overview of namespace $namespace ... with "
+            .scalar(@$class_info_list)." classes ... ";
     
     my $report         = create_class_overview_report($namespace);
     my $namespace_path = $namespace || '.';
@@ -570,7 +624,7 @@ sub report_namespace {
         say $report_file_handle '</body>';
         say $report_file_handle '</html>';
     }
-    say "Done";
+    TRACE {Level => 10}, "    Done";
 	   1;
 }
 
@@ -579,9 +633,13 @@ prepare_namespace_html_filenames($namespace_info_list);
 
 report_class_overview_list($class_info_list);
 
+print "# report class infos ...\n# ";
+
 foreach my $class_info (@$class_info_list) {
     report_class_methods($class_info);
 }
+
+print "\n# report namespace infos ...\n# ";
 
 my @namespace_keys = map { 
     $_->{name};
@@ -592,8 +650,12 @@ foreach my $namespace (@namespace_keys) {
     report_namespace($namespace);
 }
 
-say '# === All done. ========================';
+TRACE '# === All done at ' . localtime() . ' ========================';
 
+unless ($trace_mode eq 'print') {
+    say '';
+    say '# === All done. ========================';
+}
 
 1;
 

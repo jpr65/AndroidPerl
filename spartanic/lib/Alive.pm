@@ -5,7 +5,7 @@
 #  to show perl is still alive and working during long time runnings
 #  prints out chars every n-th call 
 #
-#  Ralf Peine, Thu May 22 18:10:35 2015
+#  Ralf Peine, Wed May 26 18:10:35 2015
 #
 #==============================================================================
 
@@ -15,7 +15,7 @@ use strict;
 use warnings;
 
 use vars qw($VERSION);
-$VERSION ='0.100';
+$VERSION ='0.110';
 
 use Perl5::Spartanic;
 

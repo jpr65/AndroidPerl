@@ -11,6 +11,13 @@ my $root_dir = '/storage/emulated/legacy';
 
 sub get {
     return {
+        -trace_mode        => 'off',
+        # -trace_mode        => 'print',
+        # -trace_mode        => 'file',
+        -trace_level       => 2,
+                              # absolute path needed for file find
+        -trace_file        => '/storage/emulated/legacy/perl_sw/info/trace.log',
+        
         -perl_meta_db_file => "$root_dir/perl_sw/info/perl_meta_dump.pl.dump",
         # -cpan_lib_path     => "$root_dir/CCTools/Perl/CPAN/lib",
         # -perl_lib_path     => '../lib',

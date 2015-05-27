@@ -6,7 +6,7 @@
 #
 #  Part of Perl5::Spartanic::IDE
 #
-# Ralf Peine, Sat May  9 15:10:35 2015
+# Ralf Peine, Wed May 26 08:10:35 2015
 #
 #==============================================================================
 
@@ -16,7 +16,7 @@ use strict;
 use warnings;
 
 use vars qw($VERSION);
-$VERSION ='0.110';
+$VERSION ='0.120';
 
 use v5.10;
 use Perl5::Spartanic;
@@ -124,7 +124,8 @@ sub read {
     
     # --- run sub -----------------------------------------------
     
-    say "# Load from file $dump_db_file_name";
+    TRACE("# Load from file $dump_db_file_name");
+    
     $self->{DB} = PQL::Cache::new_from_dump(
         "PerlMeta",
         $dump_db_file_name
@@ -135,14 +136,14 @@ sub read {
 	        from => 'class',
 	   );
     
-    say '# '.scalar (@$classes) . " class infos loaded.";
+    TRACE('# '.scalar (@$classes) . " class infos loaded.");
     
     my $methods = $self->get_database()->select(
         what  => 'all',
 	       from  => 'method',
 	   );
 
-    say '# '.scalar (@$methods) . " method infos loaded.";
+    TRACE('# '.scalar (@$methods) . " method infos loaded.");
 }
 
 # --- Dump internal database into file -----------------
@@ -478,5 +479,8 @@ sub sort_by {
             ; 
     return \@sorted_rows
 }
+
+# so import of Log::Trace is not needed
+sub TRACE { say "@_";};
 
 1;
