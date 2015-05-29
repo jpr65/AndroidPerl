@@ -1,0 +1,65 @@
+<html>
+<title>PM <TMPL_VAR NAMESPACE><TMPL_VAR CLASS_NAME></title>
+          <!-- Report::Porf::Table::Simple::AutoColumnConfigurator -->
+<body>
+
+<h1><TMPL_VAR LINKED_NAMESPACE><TMPL_VAR CLASS_NAME></h1>
+    <!-- 
+      <a href='./../../../_index.html'>Report</a>
+    ::<a href='./../../_index.html'>   Porf  </a>
+    ::<a href='./../_index.html'>      Table </a>
+    ::<a href='./_index.html'>         Simple</a>
+    -->
+    <!--
+    ::AutoColumnConfigurator -->
+    
+<h3><TMPL_VAR HOME_LINK></h3>
+    <!-- <a href='../../../../_index.html'>Home</a> -->
+
+<h4><TMPL_VAR CLASS_FILE></h4>
+    <!-- {SPRT}/Report/Porf/Table/Simple/AutoColumnConfigurator.pm -->
+
+<h4><TMPL_VAR DATE_TIME></h4>
+Documentation: <TMPL_VAR CLASS_DOC_LINK> 
+          <!-- <a href='...doc-html/Report/Porf/Table/Simple/xxx.html'>CPAN</a> -->
+
+<h4><a href='#methods'><TMPL_VAR CLASS_METHOD_COUNT> 
+                        Methods/Subs have been found in .pm file</a></h4>
+
+<h4><a href='#uses'>   <TMPL_VAR CLASS_USES_COUNT>
+                        Modules/Classes are used by this one.</a></h4>
+
+<h4><a href='#used_by'><TMPL_VAR CLASS_USED_BY_COUNT>
+                        Modules/Classes are using this one.</a></h4>
+
+<hr/>
+
+<h3 id='methods'>Methods / Subs of <TMPL_VAR CLASS_NAME></h3>
+
+<TMPL_VAR CLASS_METHOD_COUNT> methods/subs have been found by the parser in the *.pm file.
+There may be more of them in compiled code or additional unknown files.
+
+<table border='1' rules='cols'>
+   <TMPL_VAR CLASS_METHOD_TABLE>
+</table>
+
+<h3 id='uses'>Other Modules / Classes used by <TMPL_VAR CLASS_NAME></h3>
+
+<TMPL_VAR CLASS_USES_COUNT> use ...; entries found by the parser in the *.pm file.
+There may be more of them in compiled code or additional unknown files.
+
+<table border='1' rules='cols'>
+   <TMPL_VAR CLASS_USES_TABLE>
+</table>
+
+<h3 id='used_by'>Other Modules / Classes that are using <TMPL_VAR CLASS_NAME></h3>
+
+<TMPL_VAR CLASS_USED_BY_COUNT> use <TMPL_VAR NAMESPACE><TMPL_VAR CLASS_NAME>;
+entries found by the parser in all other scanned *.pm files.
+
+<table border='1' rules='cols'>
+   <TMPL_VAR CLASS_USED_BY_TABLE>
+</table>
+
+</body>
+</html>
