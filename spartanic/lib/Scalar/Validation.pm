@@ -4,12 +4,12 @@
 #
 # Simple rule based validation package for scalar values
 #
-# Ralf Peine, Sat Oct 25 15:10:22 2014
+# Ralf Peine, Sat May 30 09:10:22 2014
 #
 # More documentation at the end of file
 #------------------------------------------------------------------------------
 
-$VERSION = "0.710";
+$VERSION = "0.711";
 
 package Scalar::Validation;
 
@@ -2084,7 +2084,7 @@ C<$Scalar::Validation::off>:
       my ($max_potenz,
       ) = @_;
 
-      if ($Scalar::Validation::off) {
+      unless ($Scalar::Validation::off) {
           my $trouble_level = p_start;
 
           $max_potenz = par maximum_potenz => -Range => [1,5] => Int => shift;

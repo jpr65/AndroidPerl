@@ -34,6 +34,7 @@ use Perl5::Spartanic;
 
 use Alive qw(:all);
 use Log::Trace;
+use HTML::Template;
 
 use Scalar::Validation qw(:all);
 use PQL::Cache qw (:all);
@@ -234,7 +235,7 @@ sub build_doc_filename {
     
     $html_file =~ s{::}{/}og;
     
-    my $link ='';
+    my $link = '';
     
     foreach my $doc_path_name (sort(keys(%$doc_path_hashref))) {
         my $doc_path       = $doc_path_hashref->{$doc_path_name};
@@ -257,6 +258,8 @@ sub build_doc_filename {
             $link .= "<a href='$full_html_file'>$doc_path_name</a>";
         }
     }
+    
+    $link = '-' unless $link;
     
     return prepare_url($link);
 }
@@ -308,7 +311,8 @@ sub gen_doc_html {
     
     if ($gen_html_file) {
         make_path(dirname($html_file));
-        say "gen doc for $html_file";
+        tack;
+        TRACE "gen doc for $html_file";
 
         pod2html(
                  "--podpath=lib:ext:pod:vms:html",
@@ -396,7 +400,7 @@ sub report_class_overview_list {
     
     print $report_file_handle $report->get_header_output();
        
-    $report->write_table($class_info_list, $report_file_handle);
+    $report->write_table_rows($class_info_list, $report_file_handle);
     
     say $report_file_handle $report->get_table_end();
 
@@ -503,60 +507,62 @@ sub report_class_methods {
     TRACE_HERE {Level => 3};
     	TRACE "report $html_file ... ";
     
-    my @method_list;
-    foreach my $method_name (sort(keys %{$class_info->{subs}})) {
-        my $method_info = $class_info->{subs}->{$method_name};
-        push (@method_list, $method_info);
-    }
-
-    my $framework = Report::Porf::Framework::get();
-    my $report    = $framework->create_report('html');
-    
-    $report->cc(-h => 'ID',    -w =>  5,  -vn => 'ID',   -a => 'r', -f  => "%5d");
-    $report->cc(-h => '#Line', -w =>  5,  -v  => '$_[0]->{line_nbr} || 0',
-                               -a => 'r', -f  => "%5d");
-    $report->cc(-h => '***',   -w =>  1,  -v => 'return ""; ');
-    $report->cc(-h => 'Name',  -w => 30,  -vn => 'name');
-    
-    $report->configure_complete();
-    
     my $done = eval {
-	       
-	       my $report_file_handle = new FileHandle;
-
-        $report_file_handle->open(">$html_file");
-
-        say $report_file_handle '<html>';
-        say $report_file_handle "<title>Perl Module/Class: $fullname</title>";
-        say $report_file_handle '<body>';
     
+        # --- build method list ---
+	       my @method_list;
+        foreach my $method_name (sort(keys %{$class_info->{subs}})) {
+            my $method_info = $class_info->{subs}->{$method_name};
+            push (@method_list, $method_info);
+        }
+
+        # --- configure report ---
+        my $framework = Report::Porf::Framework::get();
+        my $report    = $framework->create_report('html');
+    
+        $report->cc(-h => 'ID',    -w =>  5,  -vn => 'ID',   -a => 'r', -f  => "%5d");
+        $report->cc(-h => '#Line', -w =>  5,  -v  => '$_[0]->{line_nbr} || 0',
+                               -a => 'r', -f  => "%5d");
+        $report->cc(-h => '***',   -w =>  1,  -v => 'return ""; ');
+        $report->cc(-h => 'Name',  -w => 30,  -vn => 'name');
+    
+        $report->configure_complete();
+    
+        # --- prepare html template ---
+        my $template = HTML::Template->new(
+            default_escape => 'none',
+            filename       => './html_templates/package.htmpl'
+        );
+ 
+        
+        # --- fill in template parameters ---
         my $namespace_html = build_namespace_links_up($namespace);
+        my $doc_file_link  = build_doc_filename($fullname);
         
-        say $report_file_handle "<h1>$namespace_html::$classname</h1>";
+        $template->param(CLASS_NAME       => $classname);
+        $template->param(NAMESPACE        => $namespace      ? $namespace.'::'      : '');
+        $template->param(LINKED_NAMESPACE => $namespace_html ? $namespace_html.'::' : ''); 
+        $template->param(HOME_LINK        => build_home_link($namespace));
+        $template->param(CLASS_FILE       => $module_filename);
+        $template->param(DATE_TIME        => ''.localtime());
+        $template->param(CLASS_DOC_LINK   => $doc_file_link);
         
-        say $report_file_handle "<h3>".build_home_link($namespace)."</h3>";
-        
-        say $report_file_handle "<h4>$module_filename</h4>";
-        say $report_file_handle '<h4>'.localtime().'</h4>';
-        my $doc_file_link = build_doc_filename($fullname);
-        say $report_file_handle "Documentation: $doc_file_link" if $doc_file_link;
-        say $report_file_handle '<h4>Subs listed: '.scalar(@method_list).'</h4>';
-    
-        print $report_file_handle $report->get_table_start();
-    
-        print $report_file_handle $report->get_header_output();
+        $template->param(CLASS_METHOD_COUNT => scalar(@method_list));
        
-        $report->write_table(\@method_list, $report_file_handle);
+        $template->param(CLASS_METHOD_TABLE => $report->get_table_start()
+                                              .$report->get_header_output()
+                                              .$report->join_table_rows(\@method_list)
+                                              .$report->get_table_end()
+        );
+        
+        # --- write out report ---
+        my $class_methods_fh = new FileHandle;
+
+        $class_methods_fh->open(">$html_file");
+        $class_methods_fh->print($template->output);
+        $class_methods_fh->close();    
+	   };
     
-        say $report_file_handle $report->get_table_end();
-
-        say $report_file_handle '</body>';
-        say $report_file_handle '</html>';
-
-	       # TRACE "Done";
-	       1;
-    };
-
     unless ($done) {
 	       my $error_message = $@;
 	       say "\n\tError: $error_message";
@@ -568,6 +574,7 @@ sub report_class_methods {
         say $html_fh $error_message;
         say $html_fh "</body>";
         say $html_fh "</html>";
+        $html_fh->close();
     }
 }
 
@@ -619,7 +626,7 @@ sub report_namespace {
     
         print $report_file_handle $report->get_header_output();
        
-        $report->write_table($class_info_list, $report_file_handle);
+        $report->write_table_rows($class_info_list, $report_file_handle);
     
         say $report_file_handle $report->get_table_end();
 
@@ -629,6 +636,8 @@ sub report_namespace {
     TRACE {Level => 10}, "    Done";
 	   1;
 }
+
+print "# generate html documentation out of pod ...\n# ";
 
 prepare_html_filenames(fullname => $class_info_list);
 prepare_namespace_html_filenames($namespace_info_list);

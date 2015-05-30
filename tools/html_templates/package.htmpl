@@ -39,9 +39,9 @@ Documentation: <TMPL_VAR CLASS_DOC_LINK>
 <TMPL_VAR CLASS_METHOD_COUNT> methods/subs have been found by the parser in the *.pm file.
 There may be more of them in compiled code or additional unknown files.
 
-<table border='1' rules='cols'>
-   <TMPL_VAR CLASS_METHOD_TABLE>
-</table>
+<p>
+<TMPL_VAR CLASS_METHOD_TABLE>
+</p>
 
 <h3 id='uses'>Other Modules / Classes used by <TMPL_VAR CLASS_NAME></h3>
 

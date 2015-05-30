@@ -1296,7 +1296,25 @@ sub interprete_file_parameter {
     return $file_handle;
 }
 
-sub write_table {
+# --- connect all rows of the table to a string, but not the header line ---
+# ----------- better use write_table_rows for large tables ---------- 
+sub join_table_rows {
+    my ($self,           # instance_ref
+        $data_rows_ref,  # list of data_rows to give out
+        ) = @_;
+        
+    my $joined_rows = '';
+    my $row_output_action = $self->get_row_output_action();
+
+    foreach my $data (@{$data_rows_ref}) {
+        $joined_rows .= $row_output_action->($self, $data);
+    }
+    
+    return $joined_rows;
+}
+
+# --- write out all rows of the table, but not the header line ---
+sub write_table_rows {
     my ($self,           # instance_ref
         $data_rows_ref,  # list of data_rows to give out
         $file_handle,    # FileHandle for output
@@ -1307,7 +1325,6 @@ sub write_table {
     foreach my $data (@{$data_rows_ref}) {
         print $file_handle $row_output_action->($self, $data);
     }
-
 }
 
 # --- Write out everything in one step ----
