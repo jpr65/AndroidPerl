@@ -7,7 +7,8 @@ use warnings;
 
 package MyConfig;
 
-my $root_dir = '/storage/emulated/legacy';
+my $root_dir          = '/storage/emulated/legacy';
+my $html_template_dir = './html_templates';
 
 sub get {
     return {
@@ -32,7 +33,11 @@ sub get {
                                 PERL => "$root_dir/perl_sw/doc/perldoc-html",
                                 CPAN => "$root_dir/perl_sw/doc/cpandoc-html",
                                 SPRT => "$root_dir/perl_sw/doc/spartanic-doc-html",
-        }
+        },
+        -html_templates    => {
+                                package  => "$html_template_dir/package.htmpl",
+                                overview => "$html_template_dir/overview.htmpl",
+                              },
     };
 }
 

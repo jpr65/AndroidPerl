@@ -22,7 +22,6 @@
 <h4><TMPL_VAR DATE_TIME></h4>
 Documentation: <TMPL_VAR CLASS_DOC_LINK> 
           <!-- <a href='...doc-html/Report/Porf/Table/Simple/xxx.html'>CPAN</a> -->
-
 <h4><a href='#methods'><TMPL_VAR CLASS_METHOD_COUNT> 
                         Methods/Subs have been found in .pm file</a></h4>
 

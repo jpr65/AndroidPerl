@@ -57,6 +57,14 @@ our $perl_meta_db_file = npar -perl_meta_db_file => ExistingFile    => $config;
 our $scan_paths        = npar -scan_paths        => HashRef         => $config;
 our $html_output_path  = npar -html_out_path     => ExistingDir     => $config;
 our $doc_path_hashref  = npar -doc_paths         => HashRef         => $config;
+our $html_templates    = npar -html_templates    => HashRef         => $config;
+
+our $package_html_template  = validate               package_html_template
+                            => ExistingFile      => $html_templates->{package}
+                            ;
+our $overview_html_template = validate               overview_html_template
+                            => ExistingFile      => $html_templates->{overview}
+                            ;
 
 foreach my $doc_region (sort(keys(%$doc_path_hashref))) {
     unless (-d $doc_path_hashref->{$doc_region}) {
@@ -187,6 +195,8 @@ sub prepare_html_filenames {
     foreach my $meta_info (@$meta_info_list) {
         my $fullname = $meta_info->{$name_property};
         my $module_source = 'modules';
+        
+        tack;
         
         if (defined $meta_info->{filename} && $meta_info->{filename} =~ /^{(\w+)}/) {
             $module_source = $1;
@@ -384,28 +394,31 @@ sub report_class_overview_list {
     my $report = create_class_overview_report();
     my $report_file = create_path_for_file("$html_output_path/modules/_index.html");
     
-    my $report_file_handle = new FileHandle;
-    $report_file_handle->open(">$report_file");
+    ;
+    
+    # --- prepare html template ---
+    my $template = HTML::Template->new(
+        default_escape => 'none',
+        filename       => $overview_html_template,
+    );
+ 
+        
+    # --- fill in template parameters ---
+        
+    $template->param(DATE_TIME            => localtime().'');        
+    $template->param(MODULES_LISTED_COUNT => scalar(@$class_info_list));
+    $template->param(CLASS_OVERVIEW_TABLE => $report->get_table_start()
+                                            .$report->get_header_output()
+                                            .$report->join_table_rows($class_info_list)
+                                            .$report->get_table_end()
+    );
+        
+    # --- write out report ---
+    my $overview_fh = new FileHandle;
 
-    say $report_file_handle '<html>';
-    say $report_file_handle '<title>Perl Class Overview</title>';
-    say $report_file_handle '<body>';
-    
-    say $report_file_handle '<h1>Perl Module/Class Overview</h1>';
-    
-    say $report_file_handle '<h4>Generated: '.localtime().'</h4>';
-    say $report_file_handle '<h4>Modules listed: '.scalar(@$class_info_list).'</h4>';
-    
-    print $report_file_handle $report->get_table_start();
-    
-    print $report_file_handle $report->get_header_output();
-       
-    $report->write_table_rows($class_info_list, $report_file_handle);
-    
-    say $report_file_handle $report->get_table_end();
-
-    say $report_file_handle '</body>';
-    say $report_file_handle '</html>';
+    $overview_fh->open(">$report_file");
+    $overview_fh->print($template->output);
+    $overview_fh->close();    
 }
 
 sub build_home_link {
@@ -531,7 +544,7 @@ sub report_class_methods {
         # --- prepare html template ---
         my $template = HTML::Template->new(
             default_escape => 'none',
-            filename       => './html_templates/package.htmpl'
+            filename       => $package_html_template,
         );
  
         
@@ -637,20 +650,20 @@ sub report_namespace {
 	   1;
 }
 
-print "# generate html documentation out of pod ...\n# ";
+TRACE "# generate html documentation out of pod ...";
 
 prepare_html_filenames(fullname => $class_info_list);
 prepare_namespace_html_filenames($namespace_info_list);
 
 report_class_overview_list($class_info_list);
 
-print "# report class infos ...\n# ";
+TRACE "# report class infos ...";
 
 foreach my $class_info (@$class_info_list) {
     report_class_methods($class_info);
 }
 
-print "\n# report namespace infos ...\n# ";
+TRACE "# report namespace infos ...";
 
 my @namespace_keys = map { 
     $_->{name};
@@ -674,11 +687,10 @@ __END__
 
 =head1 NAME
 
-meta_scan.pl - Pure perl tool to extract meta data from perl source code
+meta_report.pl - Pure perl tool to create html pages of extracted perl meta data
 
-Scan dirs with perl source code for packages and subs,
-fill this meta information into a PQL::Cache and
-dump it to file system
+Reads meta information of a PQL::Cache dump and creates hmtl pages containing
+class and method informations, generates Perl-doc-html and links to it. 
 
 =head1 VERSION
 
@@ -716,7 +728,11 @@ Thats all!
 
 =head2 What is generated
 
+html overview file containing all classes/modules 
+
 1 html file per module
 
 1 html file per namespace/directory
+
+1 html-doc file per module
 

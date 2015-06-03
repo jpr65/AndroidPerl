@@ -144,7 +144,6 @@ __END__
 =head1 NAME
 
 Alive - Ticker to show perl is still alive and working during long time runnings
-#  prints out chars every n-th call 
 
 =head1 VERSION
 
