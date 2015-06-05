@@ -1338,7 +1338,7 @@ sub write_all {
 
     print $file_handle $self->get_output_start();
 
-    $self->write_table($data_rows_ref, $file_handle);
+    $self->write_table_rows($data_rows_ref, $file_handle);
         
     print $file_handle $self->get_output_end();
 }
