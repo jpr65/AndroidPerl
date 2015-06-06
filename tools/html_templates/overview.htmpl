@@ -1,0 +1,17 @@
+<html>
+<title>Perl Class Overview</title>
+
+<body>
+
+<h1>Perl Module/Class Overview</h1>
+    
+<h4><TMPL_VAR DATE_TIME></h4>
+
+<h4><TMPL_VAR MODULES_LISTED_COUNT> modules / classes listed</h4>
+
+<table border='1' rules='cols'>
+   <TMPL_VAR CLASS_OVERVIEW_TABLE>
+</table>
+
+</body>
+</html>
