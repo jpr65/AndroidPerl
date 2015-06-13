@@ -57,8 +57,8 @@ sub create {
     
     my $smaller      = npar -smaller      => -Default =>   1 => Int    => \%pars;
     my $bigger       = npar -bigger       => -Default =>  10 => Int    => \%pars;
-    my $newline      = npar -newline      => -Default => 100 => Int    => \%pars;
-    my $factor       = npar -factor       => -Default =>   1 => Int    => \%pars;
+    my $newline      = npar -newline      => -Default =>  50 => Int    => \%pars;
+    my $factor       = npar -factor       => -Default =>  10 => Int    => \%pars;
     my $smaller_char = npar -smaller_char => -Default => '.' => Scalar => \%pars;
     my $bigger_char  = npar -bigger_char  => -Default => ',' => Scalar => \%pars;
     my $name         = npar -name         => -Default => ''  => Scalar => \%pars;
@@ -209,7 +209,7 @@ prints out this
 
 =head3 new() does not exist
 
-There is no new(), use create instead(). Reason is, that there are no instances of Alive
+There is no new(), use create() instead. Reason is, that there are no instances of Alive
 that could be created.
 
 =head3 create()
@@ -221,13 +221,14 @@ Using instances is much more work to implement, slower and not so flexible.
 
 =head4 Parameters
 
-  -smaller      # print every $smaller * $factor call $smaller_char 
-  -bigger       # print every $bigger  * $factor call $bigger_char 
-  -newline      # print every $newline * $factor call "\n$count $name"
-  -factor       
-  -smaller_char 
-  -bigger_char  
-  -name         
+  # name        # default: description
+  -smaller      #  1: print every $smaller * $factor call $smaller_char 
+  -bigger       # 10: print every $bigger  * $factor call $bigger_char 
+  -newline      # 50: print every $newline * $factor call "\n$name$$counter_ref"
+  -factor       # 10:
+  -smaller_char # '.'
+  -bigger_char  # ','
+  -name         # '': prepend every new line with it
   -counter_ref  # reference to counter that should be used
   -action       # action will be called by every call of tack; or $tick->();
 
@@ -243,7 +244,7 @@ will be ignored.
 =head3 tack or $tick->()
 
 $tick->() prints out a '.' every 10th call (default), a ',' every 100th call (default) and
-starts a new line with number of calls done printed every 500th call (default is 1000).
+starts a new line with number of calls done printed every 500th call (default).
 
 =head3 tacks()
 
@@ -309,24 +310,26 @@ is called to enable ticking.
 You can use multiple ticks same time, like in the following example.
 tick1 ticks all fetched rows and tick2 only those, which are selected by
 given filter. So you can see, if database select is still running or halted.
+But start ticking not before more than 40000 rows processed. So don't
+log out for small selections.
 
   use Alive;
   
   # Ticks all fetched rows
   my $tick1 = Alive::create(
-      -name    => '   S',
+      -factor => 100,
+      -name   => '   S',
   );
 
-  Alive::all_off();
+  my $matches = 0;
 
   # To tick rows selected by filter
   my $tick2 = Alive::create(
-      -smaller      => 10,
-      -bigger       => 100,
-      -newline      => 500,
+      -factor       => 10,
       -smaller_char => '+',
       -bigger_char  => '#',
       -name         => 'M ##',
+      -counter_ref  => \$matches,
   );
 
   Alive::silent();
@@ -334,7 +337,7 @@ given filter. So you can see, if database select is still running or halted.
   my @filtered_rows;
 
   foreach my $i (1..100000) {
-      my $row = $sql->fetch_row()
+      my $row = $sql->fetch_row();
       $tick1->();
       
       if ($filter->($row)) {
@@ -344,6 +347,27 @@ given filter. So you can see, if database select is still running or halted.
       
       Alive::on() if $i == 40000;
   }
+  
+  say qq();
+  say "$matches rows matched to filter.";
+  
+It will print out something like:
+
+  .....#....,.........,........+.,.......+..,.........+
+     S 45000 .........+,......+...,.....+....,.......+..,.....+....
+     S 50000 .....+....,........
+  M ## 500 .,......+...,...+......,.....+....
+     S 55000 +.........,..+.......,.........,+.........,+.........
+     S 60000 .+........,+.........,#.......+..,......+...,..+.......
+     S 65000 .........,+.......+..,........+.,....+.....,.+........
+     S 70000 .......+..,......#...,........+.,........+.,.........
+     S 75000 ..+.......,......+...,....+.....,..+.......,.....+....
+     S 80000 ....+.....,.........+,.........,........#.,.......+..
+     S 85000 ..+.......,+........+.,.........+,........+.,.........
+     S 90000 .......+..,......+...,......+...,...#......,....+.....
+     S 95000 +.........,..+.....+..,.........,+.........,.+........+
+     S 100000 
+  987 rows matched to filter.
 
 =head1 SEE ALSO 
 
