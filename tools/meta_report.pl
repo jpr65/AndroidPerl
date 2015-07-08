@@ -265,7 +265,8 @@ sub build_doc_filename {
 
         if (-f $full_html_file) {
             $link .= ', ' if $link;
-            $link .= "<a href='$full_html_file'>$doc_path_name</a>";
+            my $href_arg = prepare_url($full_html_file);
+            $link .= "<a href='$href_arg'>$doc_path_name</a>";
         }
     }
     
@@ -285,7 +286,7 @@ sub prepare_url {
     return undef if validation_trouble($trouble_level);
     
     # --- run sub -----------------------------------------------
-        
+    
     $url = "file:///$url" if $url =~ /^\w:/;
 
     return $url;

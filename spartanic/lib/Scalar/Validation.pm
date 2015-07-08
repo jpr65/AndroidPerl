@@ -2303,15 +2303,16 @@ to compile the modules. Or use experimental type checks of Perl 5.20 .
 
 =head2 Differences to Type::Params
 
-L<Type::Params> uses the C<state> pragma, which comes in Perl Version
-12. This is much faster than C<Scalar::Validation>, but cannot be run
-with earlier versions than Perl V12.
+L<Type::Params> has the possibility to use precompiled rules.
+This is much faster than C<Scalar::Validation>,
+but you need to declare a new variable above your sub or you need 
+the C<state> pragma, which is availabe since Perl V10.
 
 C<Scalar::Validation> doesn't use C<state> and runs even with Perl
 V5.6, I tested it on sun.
 
 Also there is no validation mode in L<Type::Params>, it dies in case
-of validaiton failure.
+of validation failure.
 
 =head1 LICENSE AND COPYRIGHT
 
