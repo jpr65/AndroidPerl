@@ -221,14 +221,23 @@ $rule_store = {
                        -owner   => 'CPAN',
                        -description => "Value is a Code reference.",
     },
+    FileHandle  =>   { -name    => 'FileHandle',
+                       -where   => sub { return 0 unless $_;
+                                         my $type_name = ref($_);
+                                         !$type_name || $type_name ne "FileHandle" ? 0: 1;
+                       },
+                       -message => sub { "value $_ is not a file handle" },
+                       -owner   => 'CPAN',
+                       -description => "Value is a file handle and not a scalar.",
+    },
     Class       =>   { -name    => 'Class',
                        -where   => sub { return 0 unless $_;
                                          my $type_name = ref($_);
                                          !$type_name || $non_blessed->{$type_name} ? 0: 1;
                        },
-                       -message => sub { "value $_ is not a reference" },
+                       -message => sub { "value $_ is not a class reference" },
                        -owner   => 'CPAN',
-                       -description => "Value is a reference and not a scalar.",
+                       -description => "Value is a class reference and not a scalar.",
     },
     ModuleName  =>   { -name    => 'ModuleName',
                        -as      => Filled =>

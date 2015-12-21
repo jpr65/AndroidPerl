@@ -500,7 +500,7 @@ sub build_namespace_links_down {
     return $namespace_html;
 }
 
-sub report_class_methods {
+sub report_class_infos {
     my $trouble_level     = p_start;
     
     my $class_info = par class_info => HashRef => shift;
@@ -530,17 +530,17 @@ sub report_class_methods {
             push (@method_list, $method_info);
         }
 
-        # --- configure report ---
+        # --- configure method report ---
         my $framework = Report::Porf::Framework::get();
-        my $report    = $framework->create_report('html');
+        my $method_rep    = $framework->create_report('html');
     
-        $report->cc(-h => 'ID',    -w =>  5,  -vn => 'ID',   -a => 'r', -f  => "%5d");
-        $report->cc(-h => '#Line', -w =>  5,  -v  => '$_[0]->{line_nbr} || 0',
+        $method_rep->cc(-h => 'ID',    -w =>  5,  -vn => 'ID',   -a => 'r', -f  => "%5d");
+        $method_rep->cc(-h => '#Line', -w =>  5,  -v  => '$_[0]->{line_nbr} || 0',
                                -a => 'r', -f  => "%5d");
-        $report->cc(-h => '***',   -w =>  1,  -v => 'return ""; ');
-        $report->cc(-h => 'Name',  -w => 30,  -vn => 'name');
+        $method_rep->cc(-h => '***',   -w =>  1,  -v => 'return ""; ');
+        $method_rep->cc(-h => 'Name',  -w => 30,  -vn => 'name');
     
-        $report->configure_complete();
+        $method_rep->configure_complete();
     
         # --- prepare html template ---
         my $template = HTML::Template->new(
@@ -563,10 +563,10 @@ sub report_class_methods {
         
         $template->param(CLASS_METHOD_COUNT => scalar(@method_list));
        
-        $template->param(CLASS_METHOD_TABLE => $report->get_table_start()
-                                              .$report->get_header_output()
-                                              .$report->join_table_rows(\@method_list)
-                                              .$report->get_table_end()
+        $template->param(CLASS_METHOD_TABLE => $method_rep->get_table_start()
+                                              .$method_rep->get_header_output()
+                                              .$method_rep->join_table_rows(\@method_list)
+                                              .$method_rep->get_table_end()
         );
         
         # --- write out report ---
@@ -661,7 +661,7 @@ report_class_overview_list($class_info_list);
 TRACE "# report class infos ...";
 
 foreach my $class_info (@$class_info_list) {
-    report_class_methods($class_info);
+    report_class_infos($class_info);
 }
 
 TRACE "# report namespace infos ...";
