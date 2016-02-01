@@ -30,7 +30,7 @@ add_aufgabe(T1 =>
         }
         );
 
-add_aufgabe(A1 =>
+add_aufgabe(A001 =>
         {   
             L => [qw( +1  +2  +3 )],
             #          X   Y   Z
@@ -40,7 +40,7 @@ add_aufgabe(A1 =>
         }
         );
 
-add_aufgabe(A2 =>
+add_aufgabe(A002 =>
         {   
             L => [qw( -3  -4  -1 )],
             #          X   Y   Z
@@ -50,7 +50,7 @@ add_aufgabe(A2 =>
         }
         );
 
-add_aufgabe(A3 =>
+add_aufgabe(A003 =>
         {   
             L => [qw( +5  -2  +3 )],
             #          X   Y   Z
@@ -60,7 +60,7 @@ add_aufgabe(A3 =>
         }
         );
 
-add_aufgabe(A4 =>
+add_aufgabe(A004 =>
         {   
             L => [qw( -1  +4  -2 )],
             #          X   Y   Z
@@ -70,13 +70,73 @@ add_aufgabe(A4 =>
         }
         );
 
-add_aufgabe(A5 =>
+add_aufgabe(A005 =>
         {   
             L => [qw( -2  -3  +4 )],
             #          X   Y   Z
             A => [qw( +3  +2  +3 )],
             B => [qw( +2  -2  +1 )],
             C => [qw( -1  +1  +2 )],
+        }
+        );
+
+add_aufgabe(A007 =>
+        {   
+            L => [qw( +1  -2  -2 )],
+            #          X   Y   Z
+            A => [qw( +3  -2  +2 )],
+            B => [qw( -1  +3  +1 )],
+            C => [qw( -1  -3  +2 )],
+        }
+        );
+
+add_aufgabe(A008 =>
+        {   
+            L => [qw( -3  +1  +2 )],
+            #          X   Y   Z
+            A => [qw( -3  -2  -2 )],
+            B => [qw( -1  +3  +1 )],
+            C => [qw( +1  +3  -2 )],
+        }
+        );
+
+add_aufgabe(A009 =>
+        {   
+            L => [qw( +4  -1  -3 )],
+            #          X   Y   Z
+            A => [qw( -2  -4  -2 )],
+            B => [qw( -1  +3  -1 )],
+            C => [qw( +1  +3  +2 )],
+        }
+        );
+
+add_aufgabe(A010 =>
+        {   
+            L => [qw( -6  +7  -2 )],
+            #          X   Y   Z
+            A => [qw( -4  -3  -2 )],
+            B => [qw( +2  +2  -1 )],
+            C => [qw( +3  +1  -6 )],
+        }
+        );
+
+add_aufgabe(A011 =>
+        {   
+            L => [qw( +4  -1  -3 )],
+            #          X   Y   Z
+            A => [qw( -2  -4  -2 )],
+            B => [qw( -1  +3  -1 )],
+            C => [qw( +1  +3  +2 )],
+        }
+        );
+
+add_aufgabe(A012 =>
+        {   
+            L => [qw( +7  -8  -9 )],
+            #          X   Y   Z
+            A => [qw( -2  -4  +2 )],
+            B => [qw( -1  +3  -4 )],
+            C => [qw( +1  +3  -1 )],
         }
         );
 

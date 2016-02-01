@@ -117,7 +117,9 @@ sub sprint_aufgabe {
             $unbekannte++;
         }
 
-        $result_line .= "= $gl->[3]\n";
+        my $constant = $gl->[3];
+        $constant = " $constant" if $constant >= 0;
+        $result_line .= "= $constant\n";
         $result_line =~ s/^\+/ /o;
         $result_str .= $result_line; 
     }
