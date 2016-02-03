@@ -24,7 +24,7 @@ use warnings;
 use vars qw($VERSION);
 $VERSION ='0.110';
 
-# methods will follow!
+# no methods!
 
 1;
 
