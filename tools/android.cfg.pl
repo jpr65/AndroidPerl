@@ -24,14 +24,14 @@ sub get {
         # -perl_lib_path     => '../lib',
         -html_out_path     => "$root_dir/perl_sw/info",
         -scan_paths        => { 
-                                CPAN => "$root_dir/CCTools/Perl/CPAN/lib",
-                                PERL => "$root_dir/perl_sw/perl_lib",
+                                # CPAN => "$root_dir/CCTools/Perl/CPAN/lib",
+                                # PERL => "$root_dir/perl_sw/perl_lib",
                                 PROJ => '../lib',
                                 SPRT => '../spartanic/lib',
                               },
         -doc_paths         => {
-                                PERL => "$root_dir/perl_sw/doc/perldoc-html",
-                                CPAN => "$root_dir/perl_sw/doc/cpandoc-html",
+                                # PERL => "$root_dir/perl_sw/doc/perldoc-html",
+                                # CPAN => "$root_dir/perl_sw/doc/cpandoc-html",
                                 SPRT => "$root_dir/perl_sw/doc/spartanic-doc-html",
         },
         -html_templates    => {

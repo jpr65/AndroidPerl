@@ -376,6 +376,12 @@ sub create_class_overview_report {
     );
     $report->cc(-h => 'File',      -w => 45,  -vn => 'filename');
     
+    $report->cc(-h => 'Fullname',  -w => 45, -esc => 0,
+                -v => sub { '<a href="' . prepare_url($_[0]->{_html_file}) .'">'
+                                        . $_[0]->{fullname}  . '</a>'; 
+                          }
+    );
+    
     $report->configure_complete();
     
     return $report;
